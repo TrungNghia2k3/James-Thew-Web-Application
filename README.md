@@ -4,9 +4,9 @@ This is a simple Java web application built using Servlet technology, deployed o
 
 ## 🚀 Technologies Used
 
-- **Tomcat**: 9.0.104  
-- **Java Servlet API**: 4.0.1 (javax.servlet)  
+- **Tomcat**: 9.0.104
 - **JDK**: 21  
+- **Java Servlet API**: 4.0.1 (javax.servlet)  
 - **MySQL Connector/J**: 8.0.11  
 - **Gson (JSON parser)**: 2.8.3  
 
