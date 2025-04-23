@@ -1,13 +1,16 @@
 package com.util;
 
+import io.github.cdimascio.dotenv.Dotenv;
+
 import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
 public class DBUtil {
-    private static final String JDBC_URL = "jdbc:mysql://localhost:3306/demo_db";
-    private static final String JDBC_USER = "root";
-    private static final String JDBC_PASS = "root";
+    private static final Dotenv dotenv = Dotenv.load();
+    private static final String JDBC_URL = dotenv.get("DB_URL");
+    private static final String JDBC_USER = dotenv.get("DB_USERNAME");
+    private static final String JDBC_PASS = dotenv.get("DB_PASSWORD");
 
     static {
         try {
