@@ -1,34 +1,23 @@
-package com.model;
+package com.response;
 
 import java.util.Date;
 
-public class User {
+public class UserResponse {
     private int userId;
     private String username;
-    private String password;
     private String email;
     private String role;
     private String subscriptionType;
     private Date subscriptionStartDate;
     private Date subscriptionEndDate;
 
-    public User() {
-    }
-
-    public User(int userId, String username, String role, String password) {
-        this.userId = userId;
-        this.username = username;
-        this.role = role;
-        this.password = password;
-    }
+    public UserResponse() {}
 
     public int getUserId() {
         return userId;
     }
 
-    public void setUserId(int userId) {
-        this.userId = userId;
-    }
+    public void setUserId(int userId) {this.userId = userId;}
 
     public String getUsername() {
         return username;
@@ -36,14 +25,6 @@ public class User {
 
     public void setUsername(String username) {
         this.username = username;
-    }
-
-    public String getPassword() {
-        return password;
-    }
-
-    public void setPassword(String password) {
-        this.password = password;
     }
 
     public String getEmail() {
@@ -74,9 +55,7 @@ public class User {
         return subscriptionStartDate;
     }
 
-    public void setSubscriptionStartDate(Date subscriptionStartDate) {
-        this.subscriptionStartDate = subscriptionStartDate;
-    }
+    public void setSubscriptionStartDate(Date subscriptionStartDate) {this.subscriptionStartDate = subscriptionStartDate;}
 
     public Date getSubscriptionEndDate() {
         return subscriptionEndDate;

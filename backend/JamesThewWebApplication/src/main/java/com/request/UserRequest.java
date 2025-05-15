@@ -1,33 +1,41 @@
-package com.model;
+package com.request;
+
+import com.google.gson.annotations.Expose;
 
 import java.util.Date;
 
-public class User {
-    private int userId;
+public class UserRequest {
+    @Expose
+    private int id;
+
+    @Expose
     private String username;
+
+    @Expose
     private String password;
+
+    @Expose
     private String email;
+
+    @Expose
     private String role;
+
+    @Expose
     private String subscriptionType;
+
     private Date subscriptionStartDate;
+
     private Date subscriptionEndDate;
 
-    public User() {
+    public UserRequest() {}
+
+    // Getters and setters
+    public int getId() {
+        return id;
     }
 
-    public User(int userId, String username, String role, String password) {
-        this.userId = userId;
-        this.username = username;
-        this.role = role;
-        this.password = password;
-    }
-
-    public int getUserId() {
-        return userId;
-    }
-
-    public void setUserId(int userId) {
-        this.userId = userId;
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getUsername() {
