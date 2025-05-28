@@ -1,9 +1,10 @@
 package com.filter;
 
-import com.response.ApiResponse;
 import com.google.gson.Gson;
+import com.response.ApiResponse;
 import com.service.JwtService;
 import com.service.UserService;
+import com.util.ResponseUtil;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -16,17 +17,12 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.List;
 
 @WebFilter(urlPatterns = "/api/protected/*")
 public class JwtFilter implements Filter {
-    private static final Gson gson = new Gson();
-    private final JwtService jwtService;
-    private final UserService userService;
-
-    public JwtFilter() {
-        this.jwtService = new JwtService();
-        this.userService = new UserService();
-    }
+    private final static JwtService jwtService = new JwtService();
+    private final static UserService userService = new UserService();
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {
@@ -34,52 +30,54 @@ public class JwtFilter implements Filter {
         HttpServletResponse response = (HttpServletResponse) res;
         response.setContentType("application/json");
 
-        // Extract Authorization header
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            sendResponse(response, new ApiResponse<>(401, "Missing or invalid Authorization header"));
+            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Missing or invalid Authorization header"));
             return;
         }
 
-        // Extract JWT
         String jwt = authHeader.substring(7);
         try {
-            // Validate JWT
             Claims claims = jwtService.validateJwt(jwt);
 
-            // Set user details in request
-            request.setAttribute("user_id", claims.get("user_id", Integer.class));
-            request.setAttribute("username", claims.getSubject());
-            request.setAttribute("role", claims.get("role", String.class));
+            Integer userId = claims.get("user_id", Integer.class);
+            String username = claims.getSubject();
+            List<String> roles = claims.get("roles", List.class);
+            List<String> permissions = claims.get("permissions", List.class);
 
-            // Check subscription for members
-            if ("member".equals(claims.get("role"))) {
-                boolean isSubscriptionValid = userService.isSubscriptionValid(claims.get("user_id", Integer.class));
-                if (!isSubscriptionValid) {
-                    sendResponse(response, new ApiResponse<>(403, "Subscription expired or user not found"));
-                    return;
-                }
-            }
+            request.setAttribute("user_id", userId);
+            request.setAttribute("username", username);
+            request.setAttribute("roles", roles);
+            request.setAttribute("permissions", permissions);
 
-            // Check role-based access
-            if (!jwtService.hasRequiredRole(request, claims.get("role", String.class))) {
-                sendResponse(response, new ApiResponse<>(403, "Insufficient permissions"));
+            // Nếu là MEMBER thì kiểm tra subscription
+//            if (roles.contains("MEMBER")) {
+//                boolean isSubscriptionValid = userService.isSubscriptionValid(userId);
+//                if (!isSubscriptionValid) {
+//                    ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Subscription expired or user not found"));
+//                    return;
+//                }
+//            }
+
+            // Kiểm tra role có đủ quyền truy cập không
+            if (!jwtService.hasRequiredRole(request, roles)) {
+                ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Insufficient role access"));
                 return;
             }
 
-            // Proceed to the servlet
+            // (Optional) Nếu muốn kiểm tra permission:
+            // if (!jwtService.hasPermission(claims, "MANAGE_CONTESTS")) {
+            //     ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Permission denied"));
+            //     return;
+            // }
+
             chain.doFilter(req, res);
         } catch (ExpiredJwtException e) {
-            sendResponse(response, new ApiResponse<>(401, "Token expired"));
+            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Token expired"));
         } catch (JwtException e) {
-            sendResponse(response, new ApiResponse<>(401, "Invalid token"));
+            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Invalid token"));
         } catch (Exception e) {
-            sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtil.sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
-    }
-
-    private void sendResponse(HttpServletResponse response, ApiResponse<?> apiResponse) throws IOException {
-        response.setStatus(apiResponse.getStatus());
-        response.getWriter().write(gson.toJson(apiResponse));
     }
 }

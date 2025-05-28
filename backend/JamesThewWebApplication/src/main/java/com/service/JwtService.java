@@ -6,10 +6,13 @@ import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 
 import javax.servlet.http.HttpServletRequest;
+import java.util.List;
 
 public class JwtService {
     private static final Dotenv dotenv = Dotenv.load();
     private static final String SECRET_KEY = dotenv.get("SECRET_KEY");
+
+
 
     public Claims validateJwt(String jwt) throws JwtException {
         assert SECRET_KEY != null;
@@ -20,17 +23,25 @@ public class JwtService {
                 .getBody();
     }
 
-    public boolean hasRequiredRole(HttpServletRequest request, String role) {
-        String uri = request.getRequestURI();
-        String requiredRole = getRequiredRole(uri);
-        return requiredRole == null || role.equals(requiredRole);
+    public boolean hasRequiredRole(HttpServletRequest request, List<String> userRoles) {
+        String requiredRole = getRequiredRole(request.getRequestURI());
+        return requiredRole == null || userRoles.contains(requiredRole.toUpperCase());
+    }
+
+    public boolean hasPermission(Claims claims, String permission) {
+        List<String> permissions = claims.get("permissions", List.class);
+        return permissions != null && permissions.contains(permission);
     }
 
     private String getRequiredRole(String uri) {
         if (uri.startsWith("/api/protected/admin")) {
             return "admin";
-        } else if (uri.startsWith("/api/protected/member")) {
-            return "member";
+        } else if (uri.startsWith("/api/protected/staff")) {
+            return "staff";
+        } else if (uri.startsWith("/api/protected/writer")) {
+            return "writer";
+        } else if (uri.startsWith("/api/protected/subscriber")) {
+            return "subscriber";
         }
         return null;
     }

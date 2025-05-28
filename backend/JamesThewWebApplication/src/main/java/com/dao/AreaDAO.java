@@ -1,0 +1,23 @@
+package com.dao;
+
+import com.config.DatabaseConfig;
+
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+
+public class AreaDAO {
+   private static final String CHECK_AREA_EXISTS_BY_NAME_QUERY = "SELECT 1 FROM areas WHERE name = ? LIMIT 1";
+
+   public boolean existsByName(String name) throws SQLException {
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(CHECK_AREA_EXISTS_BY_NAME_QUERY)) {
+
+            stmt.setString(1, name);
+            try (ResultSet rs = stmt.executeQuery()) {
+                return rs.next(); // true nếu tồn tại ít nhất 1 dòng
+            }
+        }
+    }
+}

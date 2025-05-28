@@ -17,7 +17,7 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 
-@WebServlet(urlPatterns = {"/api/users"})
+@WebServlet("/api/users")
 public class UserServlet extends HttpServlet {
     private static final Gson gson = new Gson();
     private static final UserService userService = new UserService();
@@ -60,16 +60,16 @@ public class UserServlet extends HttpServlet {
 
         UserRequest userRequest = gson.fromJson(sb.toString(), UserRequest.class);
 
-        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
-            return;
-        }
+//        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
+//            ResponseUtil.sendResponse(resp, );
+//            return;new ApiResponse<>(400, "All fields are required")
+//        }
 
         try {
-            userService.addUser(userRequest);
+            userService.register(userRequest);
             ResponseUtil.sendResponse(resp, new ApiResponse<>(201, "User created successfully", null));
         } catch (Exception e) {
             ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
@@ -98,22 +98,22 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
-                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
-            return;
-        }
+//        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
+//                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
+//            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
+//            return;
+//        }
 
-        try {
-            userService.editUser(userRequest);
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
-        } catch (UserNotFoundException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "User not found"));
-        } catch (Exception e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
-        }
+//        try {
+//            userService.editUser(userRequest);
+//            ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
+//        } catch (UserNotFoundException e) {
+//            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "User not found"));
+//        } catch (Exception e) {
+//            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+//        }
     }
 
     @Override

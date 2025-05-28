@@ -1,4 +1,4 @@
-package com.util;
+package com.config;
 
 import io.github.cdimascio.dotenv.Dotenv;
 
@@ -6,7 +6,7 @@ import java.sql.Connection;
 import java.sql.DriverManager;
 import java.sql.SQLException;
 
-public class DBUtil {
+public class DatabaseConfig {
     private static final Dotenv dotenv = Dotenv.load();
     private static final String JDBC_URL = dotenv.get("DB_URL");
     private static final String JDBC_USER = dotenv.get("DB_USERNAME");

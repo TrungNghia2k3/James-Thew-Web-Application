@@ -18,18 +18,27 @@ public class UserRequest {
     private String email;
 
     @Expose
-    private String role;
+    private String firstName;
 
     @Expose
-    private String subscriptionType;
+    private String lastName;
 
-    private Date subscriptionStartDate;
+    @Expose
+    private String phone;
 
-    private Date subscriptionEndDate;
+    public UserRequest() {
+    }
 
-    public UserRequest() {}
+    public UserRequest(int id, String username, String password, String email, String firstName, String lastName, String phone) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phone = phone;
+    }
 
-    // Getters and setters
     public int getId() {
         return id;
     }
@@ -62,35 +71,27 @@ public class UserRequest {
         this.email = email;
     }
 
-    public String getRole() {
-        return role;
+    public String getFirstName() {
+        return firstName;
     }
 
-    public void setRole(String role) {
-        this.role = role;
+    public void setFirstName(String firstName) {
+        this.firstName = firstName;
     }
 
-    public String getSubscriptionType() {
-        return subscriptionType;
+    public String getLastName() {
+        return lastName;
     }
 
-    public void setSubscriptionType(String subscriptionType) {
-        this.subscriptionType = subscriptionType;
+    public void setLastName(String lastName) {
+        this.lastName = lastName;
     }
 
-    public Date getSubscriptionStartDate() {
-        return subscriptionStartDate;
+    public String getPhone() {
+        return phone;
     }
 
-    public void setSubscriptionStartDate(Date subscriptionStartDate) {
-        this.subscriptionStartDate = subscriptionStartDate;
-    }
-
-    public Date getSubscriptionEndDate() {
-        return subscriptionEndDate;
-    }
-
-    public void setSubscriptionEndDate(Date subscriptionEndDate) {
-        this.subscriptionEndDate = subscriptionEndDate;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
 }
