@@ -23,7 +23,10 @@ public class RecipeService {
 
     // Default constructor for Servlet (no DI)
     public RecipeService() {
-        this(new RecipeDAO(), new CategoryDAO(), new AreaDAO(), new UserDAO());
+        this.recipeDao = new RecipeDAO();
+        this.categoryDao = new CategoryDAO();
+        this.areaDao = new AreaDAO();
+        this.userDAO = new UserDAO();
     }
 
     // Constructor for unit testing (inject mock DAOs)

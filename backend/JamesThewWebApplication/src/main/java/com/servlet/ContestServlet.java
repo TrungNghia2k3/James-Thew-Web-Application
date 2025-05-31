@@ -1,31 +1,60 @@
 package com.servlet;
 
-import javax.servlet.ServletException;
+import com.response.ApiResponse;
+import com.response.ContestResponse;
+import com.service.ContestService;
+import com.util.ResponseUtil;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
-import java.util.List;
+import java.sql.SQLException;
 
-@WebServlet("/api/protected/admin/contests")
+
+@WebServlet("/api/contests")
 public class ContestServlet extends HttpServlet {
+    private final ContestService contestService = new ContestService();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         resp.setContentType("application/json");
+        String idParam = req.getParameter("id");
 
-        // Lấy danh sách roles từ request
-        List<String> roles = (List<String>) req.getAttribute("roles");
-
-        // Kiểm tra role admin
-        if (roles == null || !roles.contains("ADMIN")) {
-            resp.setStatus(HttpServletResponse.SC_FORBIDDEN);
-            resp.getWriter().write("{\"error\":\"Admin access required\"}");
-            return;
+        try {
+            if (idParam != null) {
+                handleGetById(idParam, resp);
+            } else {
+                handleGetAll(resp);
+            }
+        } catch (SQLException e) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
+        } catch (Exception e) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
+    }
 
-        // Trả về danh sách contest
-        resp.getWriter().write("[{\"id\":1,\"title\":\"Best Vegetarian Recipe\",\"status\":\"active\"}]");
+    private void handleGetById(String idParam, HttpServletResponse resp) throws SQLException, IOException {
+        try {
+            int id = Integer.parseInt(idParam);
+            ContestResponse contest = contestService.getContestById(id);
+
+            if (contest != null) {
+                ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "Contest fetched successfully", contest));
+            } else {
+                ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "Contest with ID " + id + " does not exist"));
+            }
+        } catch (NumberFormatException e) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+        }
+    }
+
+    private void handleGetAll(HttpServletResponse resp) throws SQLException, IOException {
+        // Giả định có phương thức getAllContests
+        ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "All contests fetched", contestService.getAllContests()));
     }
 }
+
+
+
 
