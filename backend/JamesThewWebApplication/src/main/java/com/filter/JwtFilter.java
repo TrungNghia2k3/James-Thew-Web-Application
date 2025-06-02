@@ -1,6 +1,5 @@
 package com.filter;
 
-import com.google.gson.Gson;
 import com.response.ApiResponse;
 import com.service.JwtService;
 import com.service.UserService;
@@ -17,12 +16,15 @@ import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 @WebFilter(urlPatterns = "/api/protected/*")
 public class JwtFilter implements Filter {
-    private final static JwtService jwtService = new JwtService();
-    private final static UserService userService = new UserService();
+    private static JwtService jwtService = new JwtService();
+    private static UserService userService = new UserService();
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {
@@ -42,8 +44,18 @@ public class JwtFilter implements Filter {
 
             Integer userId = claims.get("user_id", Integer.class);
             String username = claims.getSubject();
-            List<String> roles = claims.get("roles", List.class);
-            List<String> permissions = claims.get("permissions", List.class);
+
+            List<?> rolesRaw = claims.get("roles", List.class);
+            List<String> roles = rolesRaw != null ? rolesRaw.stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString) // an toàn ép kiểu
+                    .collect(Collectors.toList()) : Collections.emptyList();
+
+            List<?> permissionsRaw = claims.get("permissions", List.class);
+            List<String> permissions = permissionsRaw != null ? permissionsRaw.stream()
+                    .filter(Objects::nonNull)
+                    .map(Object::toString)
+                    .collect(Collectors.toList()) : Collections.emptyList();
 
             request.setAttribute("user_id", userId);
             request.setAttribute("username", username);

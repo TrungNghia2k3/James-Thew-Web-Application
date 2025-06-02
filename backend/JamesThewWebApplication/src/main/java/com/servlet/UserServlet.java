@@ -1,6 +1,5 @@
 package com.servlet;
 
-import com.exception.UserNotFoundException;
 import com.google.gson.Gson;
 import com.request.UserRequest;
 import com.response.ApiResponse;
@@ -19,8 +18,8 @@ import java.util.List;
 
 @WebServlet("/api/users")
 public class UserServlet extends HttpServlet {
-    private static final Gson gson = new Gson();
-    private static final UserService userService = new UserService();
+    private final Gson gson = new Gson();
+    private final UserService userService = new UserService();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -36,8 +35,6 @@ public class UserServlet extends HttpServlet {
                 List<UserResponse> users = userService.getAllUsers();
                 ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User list fetched", users));
             }
-        } catch (UserNotFoundException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "User not found"));
         } catch (Exception e) {
             ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
@@ -60,13 +57,12 @@ public class UserServlet extends HttpServlet {
 
         UserRequest userRequest = gson.fromJson(sb.toString(), UserRequest.class);
 
-//        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
-//            ResponseUtil.sendResponse(resp, );
-//            return;new ApiResponse<>(400, "All fields are required")
-//        }
+        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
+                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
+                ValidationUtil.isNullOrEmpty(userRequest.getEmail())) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
+            return;
+        }
 
         try {
             userService.register(userRequest);
@@ -98,22 +94,19 @@ public class UserServlet extends HttpServlet {
             return;
         }
 
-//        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getEmail()) ||
-//                ValidationUtil.isNullOrEmpty(userRequest.getSubscriptionType())) {
-//            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
-//            return;
-//        }
+        if (ValidationUtil.isNullOrEmpty(userRequest.getUsername()) ||
+                ValidationUtil.isNullOrEmpty(userRequest.getPassword()) ||
+                ValidationUtil.isNullOrEmpty(userRequest.getEmail())) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "All fields are required"));
+            return;
+        }
 
-//        try {
-//            userService.editUser(userRequest);
-//            ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
-//        } catch (UserNotFoundException e) {
-//            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "User not found"));
-//        } catch (Exception e) {
-//            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
-//        }
+        try {
+            userService.editUser(userRequest);
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
+        } catch (Exception e) {
+            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+        }
     }
 
     @Override
@@ -130,8 +123,6 @@ public class UserServlet extends HttpServlet {
 
             userService.deleteUser(id);
             ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User deleted successfully", null));
-        } catch (UserNotFoundException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "User not found"));
         } catch (Exception e) {
             ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }

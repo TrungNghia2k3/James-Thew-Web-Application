@@ -1,13 +1,10 @@
 package com.dao;
 
-import com.exception.UserNotFoundException;
+import com.config.DatabaseConfig;
+import com.constant.RoleType;
 import com.model.Permission;
 import com.model.Role;
-import com.constant.RoleType;
 import com.model.User;
-import com.request.UserRequest;
-import com.response.UserResponse;
-import com.config.DatabaseConfig;
 import org.mindrot.jbcrypt.BCrypt;
 
 import java.sql.Connection;
@@ -19,9 +16,31 @@ import java.util.*;
 
 public class UserDAO {
 
-    // ------------------- SQL QUERIES -------------------
-    private static final String SELECT_ALL_USERS_QUERY = "SELECT * FROM users";
-    private static final String SELECT_USER_BY_ID_QUERY = "SELECT * FROM users WHERE user_id = ?";
+    // ------------------- CRUD OPERATIONS -------------------
+    private static final String SELECT_ALL_USERS_QUERY =
+            "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                    "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                    "u.highlights, u.experience, u.education, u.social_links, " +
+                    "r.id AS role_id, r.name AS role_name, " +
+                    "p.id AS permission_id, p.name AS permission_name " +
+                    "FROM users u " +
+                    "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                    "LEFT JOIN roles r ON ur.role_id = r.id " +
+                    "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                    "LEFT JOIN permissions p ON sp.permission_id = p.id";
+
+    private static final String SELECT_USER_BY_ID_QUERY =
+            "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, u.created_at, " +
+                    "u.is_active, u.avatar, u.location, u.school, u.highlights, u.experience, u.education, u.social_links, " +
+                    "r.id AS role_id, r.name AS role_name, " +
+                    "p.id AS permission_id, p.name AS permission_name " +
+                    "FROM users u " +
+                    "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                    "LEFT JOIN roles r ON ur.role_id = r.id " +
+                    "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                    "LEFT JOIN permissions p ON sp.permission_id = p.id " +
+                    "WHERE u.id = ?";
+
 
     // ------------------- INSERT QUERIES -------------------
     private static final String INSERT_USER_QUERY = "INSERT INTO users (username, password, email, first_name, last_name, phone, created_at, is_active) VALUES (?, ?, ?, ?, ?, ?, NOW(), true)";
@@ -29,10 +48,10 @@ public class UserDAO {
     private static final String GET_ROLE_ID = "SELECT id FROM roles WHERE name = ?";
     private static final String INSERT_USER_ROLE = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
 
-    private static final String UPDATE_USER_QUERY = "UPDATE users SET username = ?, password = ?, email = ?, role = ?, subscription_type = ?, subscription_start_date = ?, subscription_end_date = ? WHERE user_id = ?";
-    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE user_id = ?";
+    private static final String UPDATE_USER_QUERY = "UPDATE users SET username = ?, password = ?, email = ?, role = ?, subscription_type = ?, subscription_start_date = ?, subscription_end_date = ? WHERE id = ?";
+    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE id = ?";
     private static final String SELECT_USER_BY_USERNAME_QUERY =
-            "SELECT u.id AS user_id, u.username, u.password, u.is_active, " +
+            "SELECT u.id, u.username, u.password, u.is_active, " +
                     "r.id AS role_id, r.name AS role_name, " +
                     "p.id AS permission_id, p.name AS permission_name " +
                     "FROM users u " +
@@ -41,10 +60,13 @@ public class UserDAO {
                     "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
                     "LEFT JOIN permissions p ON sp.permission_id = p.id " +
                     "WHERE u.username = ?";
-    private static final String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE user_id = ?";
-    private static final String CHECK_USER_EXISTS_QUERY = "SELECT 1 FROM users WHERE user_id = ?";
+    private static final String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE id = ?";
+    private static final String CHECK_USER_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
     private static final String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
-    // ------------------- CRUD OPERATIONS -------------------
+
+    private static final String UPDATE_USER_ACTIVE_STATUS_QUERY = "UPDATE users " +
+            "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
+            "WHERE id = ?";
 
     public boolean existsById(int id) throws SQLException {
         try (Connection conn = DatabaseConfig.getConnection();
@@ -57,58 +79,127 @@ public class UserDAO {
         }
     }
 
-
-    public List<UserResponse> getAllUsers() throws SQLException {
-        List<UserResponse> users = new ArrayList<>();
+    public List<User> getAllUsers() throws SQLException {
+        Map<Integer, User> userMap = new HashMap<>(); // map userId -> User
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_USERS_QUERY);
              ResultSet rs = stmt.executeQuery()) {
 
             while (rs.next()) {
-                UserResponse user = new UserResponse();
-                user.setUserId(rs.getInt("user_id"));
-                user.setUsername(rs.getString("username"));
-                user.setEmail(rs.getString("email"));
-                user.setRole(rs.getString("role"));
-                user.setSubscriptionType(rs.getString("subscription_type"));
-                user.setSubscriptionStartDate(rs.getDate("subscription_start_date"));
-                user.setSubscriptionEndDate(rs.getDate("subscription_end_date"));
+                int userId = rs.getInt("id");
+                User user = userMap.get(userId);
 
-                users.add(user);
+                // Nếu chưa có User, tạo mới
+                if (user == null) {
+                    user = new User();
+                    user.setId(userId);
+                    user.setUsername(rs.getString("username"));
+                    user.setEmail(rs.getString("email"));
+                    user.setFirstName(rs.getString("first_name"));
+                    user.setLastName(rs.getString("last_name"));
+                    user.setPhone(rs.getString("phone"));
+                    user.setCreatedAt(rs.getTimestamp("created_at"));
+                    user.setActive(rs.getBoolean("is_active"));
+                    user.setAvatar(rs.getString("avatar"));
+                    user.setLocation(rs.getString("location"));
+                    user.setSchool(rs.getString("school"));
+                    user.setHighlights(rs.getString("highlights"));
+                    user.setExperience(rs.getString("experience"));
+                    user.setEducation(rs.getString("education"));
+                    user.setSocialLinks(rs.getString("social_links"));
+                    userMap.put(userId, user);
+                }
+
+                // Lấy role nếu có
+                int roleId = rs.getInt("role_id");
+                String roleName = rs.getString("role_name");
+                if (roleId > 0 && roleName != null) {
+                    Role role = new Role();
+                    role.setId(roleId);
+                    role.setName(roleName);
+                    user.getRoles().add(role); // Thêm role vào set
+                }
+
+                // Lấy permission nếu có
+                int permissionId = rs.getInt("permission_id");
+                String permissionName = rs.getString("permission_name");
+                if (permissionId > 0 && permissionName != null) {
+                    Permission permission = new Permission();
+                    permission.setId(permissionId);
+                    permission.setName(permissionName);
+                    user.getPermissions().add(permission); // Thêm permission vào set
+                }
             }
         }
 
-        return users;
+        // Trả về danh sách users
+        return new ArrayList<>(userMap.values());
     }
 
-    public UserResponse getUserById(int id) throws UserNotFoundException {
+
+    public User getUserById(int id) throws SQLException {
+        Map<Integer, User> userMap = new HashMap<>();
+
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
 
             stmt.setInt(1, id);
+
             try (ResultSet rs = stmt.executeQuery()) {
-                if (rs.next()) {
-                    UserResponse user = new UserResponse();
-                    user.setUserId(rs.getInt("user_id"));
-                    user.setUsername(rs.getString("username"));
-                    user.setEmail(rs.getString("email"));
-                    user.setRole(rs.getString("role"));
-                    user.setSubscriptionType(rs.getString("subscription_type"));
-                    user.setSubscriptionStartDate(rs.getDate("subscription_start_date"));
-                    user.setSubscriptionEndDate(rs.getDate("subscription_end_date"));
-                    return user;
-                } else {
-                    throw new UserNotFoundException("User with id " + id + " not found.");
+                while (rs.next()) {
+                    int userId = rs.getInt("id");
+                    User user = userMap.get(userId);
+
+                    if (user == null) {
+                        user = new User();
+                        user.setId(userId);
+                        user.setUsername(rs.getString("username"));
+                        user.setEmail(rs.getString("email"));
+                        user.setFirstName(rs.getString("first_name"));
+                        user.setLastName(rs.getString("last_name"));
+                        user.setPhone(rs.getString("phone"));
+                        user.setCreatedAt(rs.getTimestamp("created_at"));
+                        user.setActive(rs.getBoolean("is_active"));
+                        user.setAvatar(rs.getString("avatar"));
+                        user.setLocation(rs.getString("location"));
+                        user.setSchool(rs.getString("school"));
+                        user.setHighlights(rs.getString("highlights"));
+                        user.setExperience(rs.getString("experience"));
+                        user.setEducation(rs.getString("education"));
+                        user.setSocialLinks(rs.getString("social_links"));
+                        userMap.put(userId, user);
+                    }
+
+                    // Lấy role nếu có
+                    int roleId = rs.getInt("role_id");
+                    String roleName = rs.getString("role_name");
+                    if (roleId > 0 && roleName != null) {
+                        Role role = new Role();
+                        role.setId(roleId);
+                        role.setName(roleName);
+                        user.getRoles().add(role);
+                    }
+
+                    // Lấy permission nếu có
+                    int permissionId = rs.getInt("permission_id");
+                    String permissionName = rs.getString("permission_name");
+                    if (permissionId > 0 && permissionName != null) {
+                        Permission permission = new Permission();
+                        permission.setId(permissionId);
+                        permission.setName(permissionName);
+                        user.getPermissions().add(permission);
+                    }
                 }
             }
-
-        } catch (SQLException e) {
-            throw new UserNotFoundException("Error while fetching user with id " + id + ": " + e.getMessage());
         }
+
+        // Vì chỉ có 1 user, trả về hoặc null nếu không tìm thấy
+        return userMap.values().stream().findFirst().orElse(null);
     }
 
-    public void addUser(UserRequest user) throws SQLException {
+
+    public void addUser(User user) throws SQLException {
 
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 
@@ -174,37 +265,25 @@ public class UserDAO {
         }
     }
 
+    public void editUser(User user) throws SQLException {
+        // Encrypt the password before storing
+        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 
-//    public void editUser(UserRequest user) throws SQLException, UserNotFoundException {
-//        if (userExists(user.getId())) {
-//            throw new UserNotFoundException("User with id " + user.getId() + " not found.");
-//        }
-//
-//        // Encrypt the password before storing
-//        String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
-//
-//        try (Connection conn = DBUtil.getConnection();
-//             PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_QUERY)) {
-//
-//            stmt.setString(1, user.getUsername());
-//            stmt.setString(2, hashedPassword);
-//            stmt.setString(3, user.getEmail());
-//            stmt.setString(4, user.getRole());
-//            stmt.setString(5, user.getSubscriptionType());
-//            stmt.setDate(6, new java.sql.Date(user.getSubscriptionStartDate().getTime()));
-//            stmt.setDate(7, new java.sql.Date(user.getSubscriptionEndDate().getTime()));
-//            stmt.setInt(8, user.getId());
-//
-//            stmt.executeUpdate();
-//        } catch (SQLException e) {
-//            throw new SQLException("Error while updating user: " + e.getMessage(), e);
-//        }
-//    }
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_QUERY)) {
 
-    public void deleteUser(int id) throws SQLException, UserNotFoundException {
-        if (userExists(id)) {
-            throw new UserNotFoundException("User with id " + id + " not found.");
+            stmt.setString(1, user.getUsername());
+            stmt.setString(2, hashedPassword);
+            stmt.setString(3, user.getEmail());
+            stmt.setInt(8, user.getId());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException("Error while updating user: " + e.getMessage(), e);
         }
+    }
+
+    public void deleteUser(int id) throws SQLException {
 
         try (Connection conn = DatabaseConfig.getConnection();
              PreparedStatement stmt = conn.prepareStatement(DELETE_USER_QUERY)) {
@@ -213,6 +292,17 @@ public class UserDAO {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new SQLException("Error while deleting user: " + e.getMessage(), e);
+        }
+    }
+
+    public void toggleUserActiveStatus(int id) throws SQLException {
+
+        try (Connection conn = DatabaseConfig.getConnection();
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_ACTIVE_STATUS_QUERY)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new SQLException("Error while toggling user active status: " + e.getMessage(), e);
         }
     }
 
@@ -231,7 +321,7 @@ public class UserDAO {
             while (rs.next()) {
                 if (user == null) {
                     user = new User();
-                    user.setId(rs.getInt("user_id"));
+                    user.setId(rs.getInt("id"));
                     user.setUsername(rs.getString("username"));
                     user.setPassword(rs.getString("password"));
                     user.setActive(rs.getBoolean("is_active"));

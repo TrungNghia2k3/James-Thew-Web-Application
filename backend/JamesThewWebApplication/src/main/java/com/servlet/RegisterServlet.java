@@ -19,7 +19,7 @@ import java.util.Map;
 @WebServlet("/api/register")
 public class RegisterServlet extends HttpServlet {
     private static final Gson gson = new Gson();
-    private static final UserService userService = new UserService();
+    private final UserService userService = new UserService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {

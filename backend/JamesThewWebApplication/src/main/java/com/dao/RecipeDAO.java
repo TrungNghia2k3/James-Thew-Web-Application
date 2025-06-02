@@ -69,7 +69,6 @@ public class RecipeDAO {
         return null; // Không tìm thấy
     }
 
-
     public List<Recipe> getAllFreeRecipes(int page, int size) throws SQLException {
         List<Recipe> recipes = new ArrayList<>();
         int offset = (page - 1) * size;

@@ -1,5 +1,7 @@
 package com.model;
 
+import java.util.Objects;
+
 public class Permission {
     private int id;
     private String name;
@@ -32,5 +34,18 @@ public class Permission {
                 ", name='" + name + '\'' +
                 ", description='" + description + '\'' +
                 '}';
+    }
+
+    @Override
+    public boolean equals(Object o) {
+        if (this == o) return true;
+        if (o == null || getClass() != o.getClass()) return false;
+        Permission that = (Permission) o;
+        return id == that.id && Objects.equals(name, that.name) && Objects.equals(description, that.description);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(id, name, description);
     }
 }

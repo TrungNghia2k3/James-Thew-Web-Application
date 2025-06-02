@@ -15,10 +15,38 @@ public class User {
     private String phone;
     private Timestamp createdAt;
     private boolean isActive;
+    private String avatar;
+    private String location;
+    private String school;
+    private String highlights;
+    private String experience;
+    private String education;
+    private String socialLinks;
     private Set<Role> roles = new HashSet<>();
     private Set<Permission> permissions = new HashSet<>();
 
     public User() {}
+
+    public User(int id, String username, String password, String email, String firstName, String lastName, String phone, Timestamp createdAt, boolean isActive, String avatar, String location, String school, String highlights, String experience, String education, String socialLinks, Set<Role> roles, Set<Permission> permissions) {
+        this.id = id;
+        this.username = username;
+        this.password = password;
+        this.email = email;
+        this.firstName = firstName;
+        this.lastName = lastName;
+        this.phone = phone;
+        this.createdAt = createdAt;
+        this.isActive = isActive;
+        this.avatar = avatar;
+        this.location = location;
+        this.school = school;
+        this.highlights = highlights;
+        this.experience = experience;
+        this.education = education;
+        this.socialLinks = socialLinks;
+        this.roles = roles;
+        this.permissions = permissions;
+    }
 
     public int getId() {
         return id;
@@ -108,20 +136,61 @@ public class User {
         this.permissions = permissions;
     }
 
-    @Override
-    public String toString() {
-        return "User{" +
-                "id=" + id +
-                ", username='" + username + '\'' +
-                ", password='" + password + '\'' +
-                ", email='" + email + '\'' +
-                ", firstName='" + firstName + '\'' +
-                ", lastName='" + lastName + '\'' +
-                ", phone='" + phone + '\'' +
-                ", createdAt=" + createdAt +
-                ", isActive=" + isActive +
-                ", roles=" + roles +
-                ", permissions=" + permissions +
-                '}';
+    public String getAvatar() {
+        return avatar;
     }
+
+    public void setAvatar(String avatar) {
+        this.avatar = avatar;
+    }
+
+    public String getLocation() {
+        return location;
+    }
+
+    public void setLocation(String location) {
+        this.location = location;
+    }
+
+    public String getSchool() {
+        return school;
+    }
+
+    public void setSchool(String school) {
+        this.school = school;
+    }
+
+    public String getHighlights() {
+        return highlights;
+    }
+
+    public void setHighlights(String highlights) {
+        this.highlights = highlights;
+    }
+
+    public String getExperience() {
+        return experience;
+    }
+
+    public void setExperience(String experience) {
+        this.experience = experience;
+    }
+
+    public String getEducation() {
+        return education;
+    }
+
+    public void setEducation(String education) {
+        this.education = education;
+    }
+
+    public String getSocialLinks() {
+        return socialLinks;
+    }
+
+    public void setSocialLinks(String socialLinks) {
+        this.socialLinks = socialLinks;
+    }
+
+
 }

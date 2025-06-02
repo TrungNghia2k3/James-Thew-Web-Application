@@ -17,7 +17,7 @@ import java.io.IOException;
 @WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
     private static final Gson gson = new Gson();
-    private static final AuthService authService = new AuthService();
+    private final AuthService authService = new AuthService();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
