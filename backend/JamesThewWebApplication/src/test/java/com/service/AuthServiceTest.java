@@ -1,9 +1,9 @@
 package com.service;
 
-import com.dao.UserDAO;
-import com.model.Permission;
-import com.model.Role;
-import com.model.User;
+import com.ntn.culinary.dao.UserDAO;
+import com.ntn.culinary.model.Permission;
+import com.ntn.culinary.model.Role;
+import com.ntn.culinary.model.User;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;

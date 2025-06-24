@@ -1,5 +1,7 @@
 package com.dao;
 
+import com.ntn.culinary.dao.UserDAO;
+
 public class FakeUserDAO extends UserDAO {
     private final boolean exists;
 
