@@ -1,6 +1,7 @@
 package com.ntn.culinary.model;
 
 import java.util.Date;
+import java.util.List;
 
 public class Recipe {
     private int id;
@@ -17,13 +18,16 @@ public class Recipe {
     private String yield;
     private String shortDescription;
     private String accessType;
+    private Nutrition nutrition;
+    private List<Comment> comments;
+    private List<DetailedInstructions> detailedInstructions;
 
     public Recipe() {
     }
 
     public Recipe(int id, String name, String category, String area, String instructions, String image,
-            String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime,
-            String yield, String shortDescription, String accessType) {
+                  String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime,
+                  String yield, String shortDescription, String accessType, Nutrition nutrition, List<Comment> comments, List<DetailedInstructions> detailedInstructions) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -38,6 +42,9 @@ public class Recipe {
         this.yield = yield;
         this.shortDescription = shortDescription;
         this.accessType = accessType;
+        this.nutrition = nutrition;
+        this.comments = comments;
+        this.detailedInstructions = detailedInstructions;
     }
 
     public int getId() {
@@ -152,6 +159,30 @@ public class Recipe {
         this.accessType = accessType;
     }
 
+    public Nutrition getNutrition() {
+        return nutrition;
+    }
+
+    public void setNutrition(Nutrition nutrition) {
+        this.nutrition = nutrition;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+
+    public List<DetailedInstructions> getDetailedInstructions() {
+        return detailedInstructions;
+    }
+
+    public void setDetailedInstructions(List<DetailedInstructions> detailedInstructions) {
+        this.detailedInstructions = detailedInstructions;
+    }
+
     @Override
     public String toString() {
         return "Recipe{" +
@@ -169,6 +200,9 @@ public class Recipe {
                 ", yield='" + yield + '\'' +
                 ", shortDescription='" + shortDescription + '\'' +
                 ", accessType='" + accessType + '\'' +
+                ", nutrition=" + nutrition + '\'' +
+                ", comments=" + comments + '\'' +
+                ", detailedInstructions=" + detailedInstructions +
                 '}';
     }
 }

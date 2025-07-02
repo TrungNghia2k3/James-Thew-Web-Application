@@ -19,6 +19,16 @@ public class JwtService {
     private static final String SECRET_KEY = dotenv.get("SECRET_KEY");
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
 
+    private static final JwtService jwtService = new JwtService();
+
+    private JwtService() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static JwtService getInstance() {
+        return jwtService;
+    }
+
     public String generateJwt(User user) {
         List<String> roleNames = user.getRoles().stream()
                 .map(Role::getName)

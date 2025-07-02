@@ -1,7 +1,7 @@
 package com.ntn.culinary.servlet;
 
 import com.ntn.culinary.response.ApiResponse;
-import com.ntn.culinary.util.ResponseUtil;
+import com.ntn.culinary.utils.ResponseUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,7 +15,7 @@ import java.io.OutputStream;
 @WebServlet("/api/images/*")
 public class ImageServlet extends HttpServlet {
 
-    private static final String BASE_PATH = "F:/Project/JamesThewWebApplication/JamesThewWebApplication/backend/images/";
+    private static final String BASE_PATH = "E:/Project/JamesThewWebApplication/source-code/backend/images/";
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
@@ -23,7 +23,7 @@ public class ImageServlet extends HttpServlet {
         String pathInfo = req.getPathInfo(); // Ví dụ: /recipes/abc.jpg hoặc /avatars/def.png
 
         if (pathInfo == null || pathInfo.equals("/")) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Path is required"));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Path is required"));
             return;
         }
 
@@ -31,7 +31,7 @@ public class ImageServlet extends HttpServlet {
         String[] parts = pathInfo.split("/", 3); // [ "", "recipes", "abc.jpg" ]
 
         if (parts.length < 3) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Invalid path. Must include type and filename"));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid path. Must include type and filename"));
             return;
         }
 
@@ -42,7 +42,7 @@ public class ImageServlet extends HttpServlet {
         File imageFile = new File(BASE_PATH + type, filename);
 
         if (!imageFile.exists()) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "Image not found"));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(404, "Image not found"));
             return;
         }
 

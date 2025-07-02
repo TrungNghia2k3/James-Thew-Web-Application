@@ -1,0 +1,19 @@
+# Backend
+backend/images/
+backend/JamesThewWebApplication/.idea
+backend/JamesThewWebApplication/out
+backend/JamesThewWebApplication/target
+
+# Frontend
+frontend/WebApplication/.idea
+frontend/WebApplication/node_modules
+frontend/WebApplication/dist
+
+# General
+*.iml
+.idea/
+.DS_Store
+Thumbs.db
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*

@@ -5,43 +5,40 @@ import com.ntn.culinary.dao.AreaDAO;
 import com.ntn.culinary.dao.CategoryDAO;
 import com.ntn.culinary.dao.RecipeDAO;
 import com.ntn.culinary.dao.UserDAO;
+import com.ntn.culinary.model.DetailedInstructions;
 import com.ntn.culinary.model.Recipe;
 import com.ntn.culinary.request.RecipeRequest;
-import com.ntn.culinary.util.ImageUtil;
+import com.ntn.culinary.utils.ImageUtils;
 import com.ntn.culinary.response.RecipeResponse;
+import com.ntn.culinary.utils.StringUtils;
 
 import javax.servlet.http.Part;
+import java.sql.Date;
 import java.sql.SQLException;
 import java.util.List;
 
 public class RecipeService {
-    private final RecipeDAO recipeDao;
-    private final CategoryDAO categoryDao;
-    private final AreaDAO areaDao;
-    private final UserDAO userDAO;
+    private static final RecipeService recipeService = new RecipeService();
 
-    // Default constructor for Servlet (no DI)
-    public RecipeService() {
-        this.recipeDao = new RecipeDAO();
-        this.categoryDao = new CategoryDAO();
-        this.areaDao = new AreaDAO();
-        this.userDAO = new UserDAO();
+    private RecipeService() {
+        // Private constructor to prevent instantiation
     }
 
-    // Constructor for unit testing (inject mock DAOs)
-    public RecipeService(RecipeDAO recipeDao, CategoryDAO categoryDao, AreaDAO areaDao, UserDAO userDAO) {
-        this.recipeDao = recipeDao;
-        this.categoryDao = categoryDao;
-        this.areaDao = areaDao;
-        this.userDAO = userDAO;
+    public static RecipeService getInstance() {
+        return recipeService;
     }
+
+    private final RecipeDAO recipeDao = RecipeDAO.getInstance();
+    private final CategoryDAO categoryDao = CategoryDAO.getInstance();
+    private final AreaDAO areaDao = AreaDAO.getInstance();
+    private final UserDAO userDAO = UserDAO.getInstance();
 
     public void addRecipe(RecipeRequest recipeRequest, Part imagePart) throws Exception {
         validateRecipeRequest(recipeRequest);
 
         if (imagePart != null && imagePart.getSize() > 0) {
-            String slug = ImageUtil.slugify(recipeRequest.getName());
-            String fileName = ImageUtil.saveImage(imagePart, slug, "recipes");
+            String slug = ImageUtils.slugify(recipeRequest.getName());
+            String fileName = ImageUtils.saveImage(imagePart, slug, "recipes");
             recipeRequest.setImage(fileName);
         }
 
@@ -50,14 +47,11 @@ public class RecipeService {
 
     public RecipeResponse getFreeRecipeById(int id) throws SQLException {
         Recipe recipe = recipeDao.getFreeRecipeById(id);
-
         if (recipe == null) {
             return null;
         }
-
         return mapRecipeToResponse(recipe);
     }
-
 
     public List<RecipeResponse> getAllFreeRecipes(int page, int size) throws SQLException {
         return recipeDao.getAllFreeRecipes(page, size).stream()
@@ -65,34 +59,52 @@ public class RecipeService {
                 .toList();
     }
 
-    public List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, int page, int size) throws SQLException {
-        return recipeDao.searchAndFilterFreeRecipes(keyword, category, page, size).stream()
+    public List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType, int page, int size) throws SQLException {
+
+        if (category != null) {
+            category = StringUtils.capitalize(category);
+        }
+
+        if (area != null) {
+            area = StringUtils.capitalize(area);
+        }
+
+        return recipeDao.searchAndFilterFreeRecipes(keyword, category, area, recipedBy, accessType, page, size).stream()
                 .map(this::mapRecipeToResponse)
                 .toList();
     }
 
-    public int countSearchAndFilterFreeRecipes(String keyword, String category) throws SQLException {
-        return recipeDao.countSearchAndFilterFreeRecipes(keyword, category);
+    public int countSearchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType) throws SQLException {
+
+        if (category != null) {
+            category = StringUtils.capitalize(category);
+        }
+
+        if (area != null) {
+            area = StringUtils.capitalize(area);
+        }
+
+        return recipeDao.countSearchAndFilterFreeRecipes(keyword, category, area, recipedBy, accessType.toUpperCase());
     }
 
     public int countAllFreeRecipes() throws SQLException {
         return recipeDao.countAllFreeRecipes();
     }
 
-    private void validateRecipeRequest(RecipeRequest recipeRequest) throws SQLException {
+    private void validateRecipeRequest(RecipeRequest recipeRequest) throws Exception {
         if (!categoryDao.existsByName(recipeRequest.getCategory())) {
-            throw new SQLException("Category does not exist");
+            throw new Exception("Category does not exist");
         }
         if (!areaDao.existsByName(recipeRequest.getArea())) {
-            throw new SQLException("Area does not exist");
+            throw new Exception("Area does not exist");
         }
         String accessType = recipeRequest.getAccessType();
         if (!String.valueOf(AccessType.FREE).equalsIgnoreCase(accessType) &&
                 !String.valueOf(AccessType.PAID).equalsIgnoreCase(accessType)) {
-            throw new SQLException("Invalid access type");
+            throw new Exception("Invalid access type");
         }
         if (!userDAO.existsById(recipeRequest.getRecipedBy())) {
-            throw new SQLException("User does not exist");
+            throw new Exception("User does not exist");
         }
     }
 
@@ -104,7 +116,7 @@ public class RecipeService {
         recipe.setInstructions(request.getInstructions());
         recipe.setImage(request.getImage());
         recipe.setIngredients(request.getIngredients());
-        recipe.setPublishedOn(request.getPublishedOn());
+        recipe.setPublishedOn(new Date(System.currentTimeMillis()));
         recipe.setRecipedBy(request.getRecipedBy());
         recipe.setPrepareTime(request.getPrepareTime());
         recipe.setCookingTime(request.getCookingTime());
@@ -116,6 +128,19 @@ public class RecipeService {
 
     private RecipeResponse mapRecipeToResponse(Recipe recipe) {
         String imageUrl = "http://localhost:8080/JamesThewWebApplication/api/images/recipes/" + recipe.getImage();
+
+        String detailedInstructionImageUrl = "http://localhost:8080/JamesThewWebApplication/api/images/instructions/";
+
+        // Add image URL to each detailed instruction
+        List<DetailedInstructions> updatedDetailedInstructions = recipe.getDetailedInstructions()
+                .stream()
+                .peek(instruction -> {
+                    if (instruction.getImage() != null) {
+                        instruction.setImage(detailedInstructionImageUrl + instruction.getImage());
+                    }
+                })
+                .toList();
+
         return new RecipeResponse(
                 recipe.getId(),
                 recipe.getName(),
@@ -130,7 +155,10 @@ public class RecipeService {
                 recipe.getCookingTime(),
                 recipe.getYield(),
                 recipe.getShortDescription(),
-                recipe.getAccessType()
+                recipe.getAccessType(),
+                recipe.getComments(),
+                recipe.getNutrition(),
+                updatedDetailedInstructions
         );
     }
 }

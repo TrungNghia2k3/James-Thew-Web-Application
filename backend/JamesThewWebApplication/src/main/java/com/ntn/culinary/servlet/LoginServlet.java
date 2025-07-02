@@ -1,11 +1,11 @@
 package com.ntn.culinary.servlet;
 
-import com.google.gson.Gson;
-import com.ntn.culinary.util.ValidationUtil;
+import com.ntn.culinary.utils.GsonUtils;
+import com.ntn.culinary.utils.ValidationUtils;
 import com.ntn.culinary.request.LoginRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.AuthService;
-import com.ntn.culinary.util.ResponseUtil;
+import com.ntn.culinary.utils.ResponseUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -16,14 +16,12 @@ import java.io.IOException;
 
 @WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
-    private static final Gson gson = new Gson();
-    private final AuthService authService = new AuthService();
+    private final AuthService authService = AuthService.getInstance();
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json");
 
-        // Read JSON payload
+        // Read request body and build JSON string
         StringBuilder sb = new StringBuilder();
         try (BufferedReader reader = req.getReader()) {
             String line;
@@ -31,17 +29,17 @@ public class LoginServlet extends HttpServlet {
                 sb.append(line);
             }
         } catch (IOException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
             return;
         }
 
-        // Parse JSON
-        LoginRequest loginRequest = gson.fromJson(sb.toString(), LoginRequest.class);
+        // Parse JSON sting to LoginRequest object by Gson
+        LoginRequest loginRequest = GsonUtils.fromJson(sb.toString(), LoginRequest.class);
 
         // Validate input
-        if (ValidationUtil.isNullOrEmpty(loginRequest.getUsername()) ||
-                ValidationUtil.isNullOrEmpty(loginRequest.getPassword())) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Username and password are required"));
+        if (ValidationUtils.isNullOrEmpty(loginRequest.getUsername()) ||
+                ValidationUtils.isNullOrEmpty(loginRequest.getPassword())) {
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Username and password are required"));
             return;
         }
 
@@ -49,12 +47,10 @@ public class LoginServlet extends HttpServlet {
         try {
             String jwt = authService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
             if (jwt != null) {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "Login successful", jwt));
-            } else {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(401, "Invalid credentials"));
+                ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Login successful", jwt));
             }
         } catch (Exception e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 }

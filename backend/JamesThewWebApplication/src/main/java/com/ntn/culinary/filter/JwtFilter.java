@@ -3,7 +3,7 @@ package com.ntn.culinary.filter;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.JwtService;
 import com.ntn.culinary.service.UserService;
-import com.ntn.culinary.util.ResponseUtil;
+import com.ntn.culinary.utils.ResponseUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
 import io.jsonwebtoken.JwtException;
@@ -23,18 +23,18 @@ import java.util.stream.Collectors;
 
 @WebFilter(urlPatterns = "/api/protected/*")
 public class JwtFilter implements Filter {
-    private static JwtService jwtService = new JwtService();
-    private static UserService userService = new UserService();
+
+    private final JwtService jwtService = JwtService.getInstance();
+    private final UserService userService = UserService.getInstance();
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
-        response.setContentType("application/json");
 
         String authHeader = request.getHeader("Authorization");
         if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Missing or invalid Authorization header"));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Missing or invalid Authorization header"));
             return;
         }
 
@@ -73,7 +73,7 @@ public class JwtFilter implements Filter {
 
             // Kiểm tra role có đủ quyền truy cập không
             if (!jwtService.hasRequiredRole(request, roles)) {
-                ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Insufficient role access"));
+                ResponseUtils.sendResponse(response, new ApiResponse<>(403, "Insufficient role access"));
                 return;
             }
 
@@ -85,11 +85,11 @@ public class JwtFilter implements Filter {
 
             chain.doFilter(req, res);
         } catch (ExpiredJwtException e) {
-            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Token expired"));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Token expired"));
         } catch (JwtException e) {
-            ResponseUtil.sendResponse(response, new ApiResponse<>(401, "Invalid token"));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Invalid token"));
         } catch (Exception e) {
-            ResponseUtil.sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 }

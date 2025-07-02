@@ -1,14 +1,12 @@
 package com.ntn.culinary.servlet.general;
 
-import com.google.gson.Gson;
 import com.ntn.culinary.request.UserRequest;
-import com.ntn.culinary.util.ValidationUtil;
+import com.ntn.culinary.utils.ValidationUtils;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.UserService;
-import com.ntn.culinary.util.CastUtil;
-import com.ntn.culinary.util.ResponseUtil;
+import com.ntn.culinary.utils.CastUtils;
+import com.ntn.culinary.utils.ResponseUtils;
 
-import javax.servlet.ServletException;
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -23,28 +21,18 @@ import java.util.Map;
 @WebServlet("/api/protected/general/users")
 @MultipartConfig
 public class UserServlet extends HttpServlet {
-    private final Gson gson = new Gson();
-    private final UserService userService = new UserService();
+    private final UserService userService = UserService.getInstance();
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException, ServletException {
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         try {
             req.setCharacterEncoding("UTF-8");
-            resp.setContentType("application/json");
 
             // Lấy thông tin từ JwtFilter
-            List<String> roles = CastUtil.toStringList(req.getAttribute("roles"));
+            List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
 
             if (roles == null || !roles.contains("GENERAL")) {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(403, "Access denied: GENERAL role required"));
+                ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: GENERAL role required"));
                 return;
             }
 
@@ -61,32 +49,32 @@ public class UserServlet extends HttpServlet {
 
             Map<String, String> errors = new HashMap<>();
 
-            if (ValidationUtil.isNotExistId(id)) {
+            if (ValidationUtils.isNotExistId(id)) {
                 errors.put("id", "ID is required");
             }
 
-            if (email != null && ValidationUtil.isNullOrEmpty(email)) {
+            if (email != null && ValidationUtils.isNullOrEmpty(email)) {
                 errors.put("email", "Email must not be empty");
-            } else if (email != null && !ValidationUtil.isValidEmail(email)) {
+            } else if (email != null && !ValidationUtils.isValidEmail(email)) {
                 errors.put("email", "Invalid email format");
             }
 
-            if (firstName != null && ValidationUtil.isNullOrEmpty(firstName)) {
+            if (firstName != null && ValidationUtils.isNullOrEmpty(firstName)) {
                 errors.put("firstName", "First name must not be empty");
             }
 
-            if (lastName != null && ValidationUtil.isNullOrEmpty(lastName)) {
+            if (lastName != null && ValidationUtils.isNullOrEmpty(lastName)) {
                 errors.put("lastName", "Last name must not be empty");
             }
 
-            if (phone != null && ValidationUtil.isNullOrEmpty(phone)) {
+            if (phone != null && ValidationUtils.isNullOrEmpty(phone)) {
                 errors.put("phone", "Phone must not be empty");
-            } else if (phone != null && !ValidationUtil.isValidPhone(phone)) {
+            } else if (phone != null && !ValidationUtils.isValidPhone(phone)) {
                 errors.put("phone", "Invalid phone format");
             }
 
             if (!errors.isEmpty()) {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Validation failed", errors));
+                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Validation failed", errors));
                 return;
             }
 
@@ -99,14 +87,10 @@ public class UserServlet extends HttpServlet {
             userRequest.setPhone(phone);
 
             userService.editGeneralUser(userRequest, avatar);
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
 
         } catch (Exception e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
-    }
-
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
     }
 }

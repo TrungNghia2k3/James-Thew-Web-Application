@@ -1,6 +1,11 @@
 package com.ntn.culinary.response;
 
+import com.ntn.culinary.model.Comment;
+import com.ntn.culinary.model.DetailedInstructions;
+import com.ntn.culinary.model.Nutrition;
+
 import java.util.Date;
+import java.util.List;
 
 public class RecipeResponse {
     private int id;
@@ -17,12 +22,15 @@ public class RecipeResponse {
     private String yield;
     private String shortDescription;
     private String accessType;
+    private List<Comment> comments;
+    private Nutrition nutrition;
+    private List<DetailedInstructions> detailedInstructions;
 
     public RecipeResponse() {
     }
 
 
-    public RecipeResponse(int id, String name, String category, String area, String instructions, String image, String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime, String yield, String shortDescription, String accessType) {
+    public RecipeResponse(int id, String name, String category, String area, String instructions, String image, String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime, String yield, String shortDescription, String accessType, List<Comment> comments, Nutrition nutrition, List<DetailedInstructions> detailedInstructions) {
         this.id = id;
         this.name = name;
         this.category = category;
@@ -37,6 +45,9 @@ public class RecipeResponse {
         this.yield = yield;
         this.shortDescription = shortDescription;
         this.accessType = accessType;
+        this.comments = comments;
+        this.nutrition = nutrition;
+        this.detailedInstructions = detailedInstructions;
     }
 
     public int getId() {
@@ -149,5 +160,29 @@ public class RecipeResponse {
 
     public void setAccessType(String accessType) {
         this.accessType = accessType;
+    }
+
+    public List<Comment> getComments() {
+        return comments;
+    }
+
+    public void setComments(List<Comment> comments) {
+        this.comments = comments;
+    }
+
+    public Nutrition getNutrition() {
+        return nutrition;
+    }
+
+    public void setNutrition(Nutrition nutrition) {
+        this.nutrition = nutrition;
+    }
+
+    public List<DetailedInstructions> getDetailedInstructions() {
+        return detailedInstructions;
+    }
+
+    public void setDetailedInstructions(List<DetailedInstructions> detailedInstructions) {
+        this.detailedInstructions = detailedInstructions;
     }
 }

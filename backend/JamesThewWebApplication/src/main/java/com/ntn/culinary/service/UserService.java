@@ -5,7 +5,7 @@ import com.ntn.culinary.model.User;
 import com.ntn.culinary.request.RegisterRequest;
 import com.ntn.culinary.request.UserRequest;
 import com.ntn.culinary.response.UserResponse;
-import com.ntn.culinary.util.ImageUtil;
+import com.ntn.culinary.utils.ImageUtils;
 
 import javax.servlet.http.Part;
 import java.sql.SQLException;
@@ -15,11 +15,17 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class UserService {
-    private final UserDAO userDao;
+    private static final UserService userService = new UserService();
 
-    public UserService() {
-        this.userDao = new UserDAO();
+    private UserService() {
+        // Private constructor to prevent instantiation
     }
+
+    public static UserService getInstance() {
+        return userService;
+    }
+
+    private final UserDAO userDao = UserDAO.getInstance();
 
     public List<UserResponse> getAllUsers() throws SQLException {
         List<User> users = userDao.getAllUsers();
@@ -51,14 +57,14 @@ public class UserService {
         if (avatar != null && avatar.getSize() > 0) {
             // Xóa ảnh cũ nếu có
             if (existingUser.getAvatar() != null) {
-                ImageUtil.deleteImage(existingUser.getAvatar(), "avatars");
+                ImageUtils.deleteImage(existingUser.getAvatar(), "avatars");
             }
 
             // Tạo slug từ tên người dùng
-            String slug = ImageUtil.slugify(request.getFirstName() + " " + request.getLastName());
+            String slug = ImageUtils.slugify(request.getFirstName() + " " + request.getLastName());
 
             // Lưu ảnh và cập nhật tên file
-            String fileName = ImageUtil.saveImage(avatar, slug, "avatars");
+            String fileName = ImageUtils.saveImage(avatar, slug, "avatars");
             request.setAvatar(fileName);
         }
 

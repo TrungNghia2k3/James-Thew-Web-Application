@@ -5,13 +5,18 @@ import com.ntn.culinary.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class AuthService {
+    private static final AuthService authService = new AuthService();
 
-    private final UserDAO userDao;
-    private final JwtService jwtService = new JwtService();
-
-    public AuthService() {
-        this.userDao = new UserDAO();
+    private AuthService() {
+        // Private constructor to prevent instantiation
     }
+
+    public static AuthService getInstance() {
+        return authService;
+    }
+
+    private final UserDAO userDao = UserDAO.getInstance();
+    private final JwtService jwtService = JwtService.getInstance();
 
     public String authenticate(String username, String password) throws Exception {
         User user = userDao.findUserByUsername(username);

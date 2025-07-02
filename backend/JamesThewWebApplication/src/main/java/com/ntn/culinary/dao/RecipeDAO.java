@@ -1,7 +1,7 @@
 package com.ntn.culinary.dao;
 
 import com.ntn.culinary.model.Recipe;
-import com.ntn.culinary.config.DatabaseConfig;
+import com.ntn.culinary.utils.DatabaseUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -11,6 +11,21 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class RecipeDAO {
+
+    private static final RecipeDAO recipeDAO = new RecipeDAO();
+
+    private RecipeDAO() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static RecipeDAO getInstance() {
+        return recipeDAO;
+    }
+
+    private final CommentDAO commentDAO = CommentDAO.getInstance();
+    private final NutritionDAO nutritionDAO = NutritionDAO.getInstance();
+    private final DetailedInstructionsDAO detailedInstructionsDAO = DetailedInstructionsDAO.getInstance();
+
     private static final String INSERT_RECIPE_QUERY = """
             INSERT INTO recipes (
                 name, category, area, instructions, image, ingredients, 
@@ -19,9 +34,11 @@ public class RecipeDAO {
             )
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """;
+
     private static final String SELECT_ALL_RECIPES_WITH_LIMIT_AND_OFFSET_QUERY = """
             SELECT * FROM recipes WHERE access_type = 'FREE' LIMIT ? OFFSET ?
             """;
+
     private static final String COUNT_ALL_RECIPES_QUERY = """
             SELECT COUNT(*) FROM recipes WHERE access_type = 'FREE'
             """;
@@ -29,7 +46,7 @@ public class RecipeDAO {
     private static final String SELECT_RECIPE_BY_ID_QUERY = "SELECT * FROM recipes WHERE id = ? AND access_type = 'FREE'";
 
     public void addRecipe(Recipe recipe) throws SQLException {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(INSERT_RECIPE_QUERY)) {
 
             stmt.setString(1, recipe.getName());
@@ -54,7 +71,7 @@ public class RecipeDAO {
 
     public Recipe getFreeRecipeById(int id) throws SQLException {
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_RECIPE_BY_ID_QUERY)) {
 
             stmt.setInt(1, id);
@@ -73,7 +90,7 @@ public class RecipeDAO {
         List<Recipe> recipes = new ArrayList<>();
         int offset = (page - 1) * size;
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_RECIPES_WITH_LIMIT_AND_OFFSET_QUERY)) {
 
             stmt.setInt(1, size);
@@ -88,26 +105,57 @@ public class RecipeDAO {
         return recipes;
     }
 
-    public List<Recipe> searchAndFilterFreeRecipes(String keyword, String category, int page, int size) throws SQLException {
+    public List<Recipe> searchAndFilterFreeRecipes(String keyword, String category,
+                                                   String area, int recipedBy,
+                                                   String accessType, int page, int size) throws SQLException {
         List<Recipe> recipes = new ArrayList<>();
         int offset = (page - 1) * size;
 
-        StringBuilder sql = new StringBuilder("SELECT * FROM recipes WHERE access_type = 'FREE'");
+        StringBuilder sql = new StringBuilder("SELECT * FROM recipes");
         List<Object> params = new ArrayList<>();
 
+        boolean hasCondition = false;
+
         if (keyword != null && !keyword.isEmpty()) {
-            sql.append(" AND name LIKE ?");
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" name LIKE ?");
             params.add("%" + keyword + "%");
+            hasCondition = true;
         }
+
         if (category != null && !category.isEmpty()) {
-            sql.append(" AND category = ?");
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" category = ?");
             params.add(category);
+            hasCondition = true;
         }
+
+        if (area != null && !area.isEmpty()) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" area = ?");
+            params.add(area);
+            hasCondition = true;
+        }
+
+        if (recipedBy > 0) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" reciped_by = ?");
+            params.add(recipedBy);
+            hasCondition = true;
+        }
+
+        if (accessType != null && !accessType.isEmpty()) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" access_type = ?");
+            params.add(accessType);
+            hasCondition = true;
+        }
+
         sql.append(" LIMIT ? OFFSET ?");
         params.add(size);
         params.add(offset);
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
 
             for (int i = 0; i < params.size(); i++) {
@@ -123,20 +171,51 @@ public class RecipeDAO {
         return recipes;
     }
 
-    public int countSearchAndFilterFreeRecipes(String keyword, String category) throws SQLException {
-        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM recipes WHERE access_type = 'FREE'");
+
+    public int countSearchAndFilterFreeRecipes(String keyword, String category,
+                                               String area, int recipedBy,
+                                               String accessType) throws SQLException {
+        StringBuilder sql = new StringBuilder("SELECT COUNT(*) FROM recipes");
         List<Object> params = new ArrayList<>();
 
+        boolean hasCondition = false;
+
         if (keyword != null && !keyword.isEmpty()) {
-            sql.append(" AND name LIKE ?");
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" name LIKE ?");
             params.add("%" + keyword + "%");
-        }
-        if (category != null && !category.isEmpty()) {
-            sql.append(" AND category = ?");
-            params.add(category);
+            hasCondition = true;
         }
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        if (category != null && !category.isEmpty()) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" category = ?");
+            params.add(category);
+            hasCondition = true;
+        }
+
+        if (area != null && !area.isEmpty()) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" area = ?");
+            params.add(area);
+            hasCondition = true;
+        }
+
+        if (recipedBy > 0) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" reciped_by = ?");
+            params.add(recipedBy);
+            hasCondition = true;
+        }
+
+        if (accessType != null && !accessType.isEmpty()) {
+            sql.append(hasCondition ? " AND" : " WHERE");
+            sql.append(" access_type = ?");
+            params.add(accessType);
+            hasCondition = true;
+        }
+
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(sql.toString())) {
 
             for (int i = 0; i < params.size(); i++) {
@@ -153,7 +232,7 @@ public class RecipeDAO {
     }
 
     public int countAllFreeRecipes() throws SQLException {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(COUNT_ALL_RECIPES_QUERY);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -180,6 +259,10 @@ public class RecipeDAO {
         recipe.setYield(rs.getString("yield"));
         recipe.setShortDescription(rs.getString("short_description"));
         recipe.setAccessType(rs.getString("access_type"));
+        recipe.setComments(commentDAO.getCommentsByRecipeId(rs.getInt("id")));
+        recipe.setNutrition(nutritionDAO.getNutritionByRecipeId(rs.getInt("id")));
+        recipe.setDetailedInstructions(detailedInstructionsDAO.getDetailedInstructionsByRecipeId(rs.getInt("id")));
+
         return recipe;
     }
 }

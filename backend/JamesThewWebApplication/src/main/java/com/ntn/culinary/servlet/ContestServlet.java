@@ -3,7 +3,7 @@ package com.ntn.culinary.servlet;
 import com.ntn.culinary.response.ContestResponse;
 import com.ntn.culinary.service.ContestService;
 import com.ntn.culinary.response.ApiResponse;
-import com.ntn.culinary.util.ResponseUtil;
+import com.ntn.culinary.utils.ResponseUtils;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -14,11 +14,10 @@ import java.sql.SQLException;
 
 @WebServlet("/api/contests")
 public class ContestServlet extends HttpServlet {
-    private final ContestService contestService = new ContestService();
+    private final ContestService contestService = ContestService.getInstance();
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
-        resp.setContentType("application/json");
         String idParam = req.getParameter("id");
 
         try {
@@ -28,9 +27,9 @@ public class ContestServlet extends HttpServlet {
                 handleGetAll(resp);
             }
         } catch (SQLException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
         } catch (Exception e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -40,18 +39,18 @@ public class ContestServlet extends HttpServlet {
             ContestResponse contest = contestService.getContestById(id);
 
             if (contest != null) {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "Contest fetched successfully", contest));
+                ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Contest fetched successfully", contest));
             } else {
-                ResponseUtil.sendResponse(resp, new ApiResponse<>(404, "Contest with ID " + id + " does not exist"));
+                ResponseUtils.sendResponse(resp, new ApiResponse<>(404, "Contest with ID " + id + " does not exist"));
             }
         } catch (NumberFormatException e) {
-            ResponseUtil.sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
         }
     }
 
     private void handleGetAll(HttpServletResponse resp) throws SQLException, IOException {
         // Giả định có phương thức getAllContests
-        ResponseUtil.sendResponse(resp, new ApiResponse<>(200, "All contests fetched", contestService.getAllContests()));
+        ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "All contests fetched", contestService.getAllContests()));
     }
 }
 

@@ -1,6 +1,6 @@
 package com.ntn.culinary.dao;
 
-import com.ntn.culinary.config.DatabaseConfig;
+import com.ntn.culinary.utils.DatabaseUtils;
 import com.ntn.culinary.constant.RoleType;
 import com.ntn.culinary.model.Permission;
 import com.ntn.culinary.model.Role;
@@ -15,6 +15,16 @@ import java.util.*;
 
 
 public class UserDAO {
+
+    private static final UserDAO userDAO = new UserDAO();
+
+    private UserDAO() {
+        // Private constructor to prevent instantiation
+    }
+
+    public static UserDAO getInstance() {
+        return userDAO;
+    }
 
     // ------------------- CRUD OPERATIONS -------------------
     private static final String SELECT_ALL_USERS_QUERY =
@@ -63,14 +73,14 @@ public class UserDAO {
                     "WHERE u.username = ?";
     private static final String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE id = ?";
     private static final String CHECK_USER_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
-    private static final String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
+    private static final String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
 
     private static final String UPDATE_USER_ACTIVE_STATUS_QUERY = "UPDATE users " +
             "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
             "WHERE id = ?";
 
     public boolean existsById(int id) throws SQLException {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(CHECK_USER_ID_EXISTS_QUERY)) {
 
             stmt.setInt(1, id);
@@ -83,7 +93,7 @@ public class UserDAO {
     public List<User> getAllUsers() throws SQLException {
         Map<Integer, User> userMap = new HashMap<>(); // map userId -> User
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_USERS_QUERY);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -141,7 +151,7 @@ public class UserDAO {
     public User getUserById(int id) throws SQLException {
         Map<Integer, User> userMap = new HashMap<>();
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
 
             stmt.setInt(1, id);
@@ -202,7 +212,7 @@ public class UserDAO {
 
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 
-        try (Connection conn = DatabaseConfig.getConnection()) {
+        try (Connection conn = DatabaseUtils.getConnection()) {
             conn.setAutoCommit(false); // Bắt đầu transaction
 
             // 1. Insert user
@@ -303,7 +313,7 @@ public class UserDAO {
         String finalQuery = queryBuilder.toString();
         System.out.println("SQL UPDATE query: " + finalQuery);
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(finalQuery)) {
 
             for (int i = 0; i < params.size(); i++) {
@@ -317,10 +327,9 @@ public class UserDAO {
         }
     }
 
-
     public void deleteUser(int id) throws SQLException {
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(DELETE_USER_QUERY)) {
 
             stmt.setInt(1, id);
@@ -332,7 +341,7 @@ public class UserDAO {
 
     public void toggleUserActiveStatus(int id) throws SQLException {
 
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_ACTIVE_STATUS_QUERY)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
@@ -344,7 +353,7 @@ public class UserDAO {
     // ------------------- AUTHENTICATION & SUBSCRIPTION -------------------
 
     public User findUserByUsername(String username) throws SQLException {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
@@ -386,7 +395,7 @@ public class UserDAO {
     }
 
     public boolean isSubscriptionValid(int userId) throws SQLException {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_SUBSCRIPTION_QUERY)) {
 
             stmt.setInt(1, userId);
@@ -406,7 +415,7 @@ public class UserDAO {
     // ------------------- UTILITIES -------------------
 
     private boolean userExists(int id) {
-        try (Connection conn = DatabaseConfig.getConnection();
+        try (Connection conn = DatabaseUtils.getConnection();
              PreparedStatement stmt = conn.prepareStatement(CHECK_USER_EXISTS_QUERY)) {
 
             stmt.setInt(1, id);
