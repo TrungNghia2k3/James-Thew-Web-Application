@@ -3,7 +3,7 @@ backend/images/
 backend/JamesThewWebApplication/.idea
 backend/JamesThewWebApplication/out
 backend/JamesThewWebApplication/target
-
+backend/JamesThewWebApplication/src/main/resources/.env
 # Frontend
 frontend/WebApplication/.idea
 frontend/WebApplication/node_modules
