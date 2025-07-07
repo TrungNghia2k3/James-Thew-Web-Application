@@ -5,7 +5,6 @@ import com.ntn.culinary.model.Role;
 import com.ntn.culinary.model.User;
 import io.github.cdimascio.dotenv.Dotenv;
 import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
@@ -18,16 +17,6 @@ public class JwtService {
     private static final Dotenv dotenv = Dotenv.load();
     private static final String SECRET_KEY = dotenv.get("SECRET_KEY");
     private static final long EXPIRATION_TIME = 86400000; // 24 hours
-
-    private static final JwtService jwtService = new JwtService();
-
-    private JwtService() {
-        // Private constructor to prevent instantiation
-    }
-
-    public static JwtService getInstance() {
-        return jwtService;
-    }
 
     public String generateJwt(User user) {
         List<String> roleNames = user.getRoles().stream()
@@ -49,7 +38,7 @@ public class JwtService {
                 .compact();
     }
 
-    public Claims validateJwt(String jwt) throws JwtException {
+    public Claims validateJwt(String jwt) {
         assert SECRET_KEY != null;
         return Jwts.parserBuilder()
                 .setSigningKey(SECRET_KEY.getBytes())

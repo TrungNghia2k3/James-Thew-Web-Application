@@ -1,13 +1,20 @@
 package com.ntn.culinary.servlet;
 
 import com.google.gson.JsonSyntaxException;
-import com.ntn.culinary.response.RecipePageResponse;
-import com.ntn.culinary.utils.ValidationUtils;
+import com.ntn.culinary.dao.AreaDao;
+import com.ntn.culinary.dao.CategoryDao;
+import com.ntn.culinary.dao.RecipeDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.AreaDaoImpl;
+import com.ntn.culinary.dao.impl.CategoryDaoImpl;
+import com.ntn.culinary.dao.impl.RecipeDaoImpl;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.request.RecipeRequest;
 import com.ntn.culinary.response.ApiResponse;
+import com.ntn.culinary.response.RecipePageResponse;
 import com.ntn.culinary.response.RecipeResponse;
 import com.ntn.culinary.service.RecipeService;
-import com.ntn.culinary.utils.ResponseUtils;
+import com.ntn.culinary.utils.ValidationUtils;
 
 import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
@@ -15,20 +22,28 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.text.SimpleDateFormat;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
+
 @WebServlet("/api/recipes")
 @MultipartConfig
 public class RecipeServlet extends HttpServlet {
-    private final RecipeService recipeService = RecipeService.getInstance();
+    private final RecipeService recipeService;
+
+    public RecipeServlet() {
+        RecipeDao recipeDao = new RecipeDaoImpl();
+        CategoryDao categoryDao = new CategoryDaoImpl();
+        AreaDao areaDao = new AreaDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+        this.recipeService = new RecipeService(recipeDao, categoryDao, areaDao, userDao);
+    }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         // Get parameters from the request
         String idParam = req.getParameter("id");
@@ -45,12 +60,12 @@ public class RecipeServlet extends HttpServlet {
             // If no ID is provided, fetch the list of recipes
             handleGetAll(resp, pageParam, sizeParam);
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try {
             req.setCharacterEncoding("UTF-8");
 
@@ -72,7 +87,7 @@ public class RecipeServlet extends HttpServlet {
             try {
                 recipedBy = Integer.parseInt(req.getParameter("recipedBy"));
             } catch (NumberFormatException e) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid user ID"));
+                sendResponse(resp, new ApiResponse<>(400, "Invalid user ID"));
                 return;
             }
 
@@ -95,37 +110,37 @@ public class RecipeServlet extends HttpServlet {
             Map<String, String> errors = validateRecipeRequest(recipeRequest, imagePart);
 
             if (!errors.isEmpty()) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Validation failed", errors));
+                sendResponse(resp, new ApiResponse<>(400, "Validation failed", errors));
                 return;
             }
 
             recipeService.addRecipe(recipeRequest, imagePart);
 
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Recipe added successfully"));
+            sendResponse(resp, new ApiResponse<>(200, "Recipe added successfully"));
 
         } catch (JsonSyntaxException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Error adding recipe: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Error adding recipe: " + e.getMessage()));
         }
     }
 
-    private void handleGetById(HttpServletResponse resp, String idParam) throws IOException {
+    private void handleGetById(HttpServletResponse resp, String idParam) {
         try {
             int id = Integer.parseInt(idParam);
             RecipeResponse recipe = recipeService.getFreeRecipeById(id);
 
             if (recipe != null) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Recipe found", recipe));
+                sendResponse(resp, new ApiResponse<>(200, "Recipe found", recipe));
             } else {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(404, "Recipe not found"));
+                sendResponse(resp, new ApiResponse<>(404, "Recipe not found"));
             }
-        } catch (NumberFormatException | SQLException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid recipe ID"));
+        } catch (NumberFormatException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid recipe ID"));
         }
     }
 
-    private void handleGetAll(HttpServletResponse resp, String pageParam, String sizeParam) throws IOException, SQLException {
+    private void handleGetAll(HttpServletResponse resp, String pageParam, String sizeParam) {
 
         // Parse pagination parameters
         int page = parseOrDefault(pageParam, 1);
@@ -133,7 +148,7 @@ public class RecipeServlet extends HttpServlet {
 
         // Validate pagination parameters
         if (page < 1 || size < 1) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Page and size must be greater than 0"));
+            sendResponse(resp, new ApiResponse<>(400, "Page and size must be greater than 0"));
             return;
         }
 
@@ -143,7 +158,7 @@ public class RecipeServlet extends HttpServlet {
         int totalPages = (int) Math.ceil((double) totalItems / size);
 
         RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-        ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
+        sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
     }
 
     private int parseOrDefault(String param, int defaultValue) {

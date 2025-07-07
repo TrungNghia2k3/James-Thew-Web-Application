@@ -1,11 +1,16 @@
 package com.ntn.culinary.servlet.admin;
 
+import com.ntn.culinary.dao.RoleDao;
+import com.ntn.culinary.dao.StaffPermissionsDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.RoleDaoImpl;
+import com.ntn.culinary.dao.impl.StaffPermissionsDaoImpl;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.request.StaffPermissionsRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.StaffPermissionsService;
 import com.ntn.culinary.utils.CastUtils;
 import com.ntn.culinary.utils.GsonUtils;
-import com.ntn.culinary.utils.ResponseUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -15,18 +20,27 @@ import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.List;
 
+import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
+
 @WebServlet("/api/protected/admin/staff-permissions")
 public class StaffPermissionsServlet extends HttpServlet {
-    private final StaffPermissionsService staffPermissionsService = StaffPermissionsService.getInstance();
+    private final StaffPermissionsService staffPermissionsService;
+
+    public StaffPermissionsServlet() {
+        StaffPermissionsDao staffPermissionsDao = new StaffPermissionsDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+        RoleDao roleDao = new RoleDaoImpl();
+        this.staffPermissionsService = new StaffPermissionsService(staffPermissionsDao, userDao, roleDao);
+    }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
         try {
             // Lấy thông tin từ JwtFilter
             List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
 
             if (roles == null || !roles.contains("ADMIN")) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
+                sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
                 return;
             }
 
@@ -38,7 +52,7 @@ public class StaffPermissionsServlet extends HttpServlet {
                     sb.append(line);
                 }
             } catch (IOException e) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+                sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
                 return;
             }
 
@@ -50,23 +64,23 @@ public class StaffPermissionsServlet extends HttpServlet {
 
             // Validate userId and roleId
             if (userId <= 0 || roleId <= 0) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid userId or roleId"));
+                sendResponse(resp, new ApiResponse<>(400, "Invalid userId or roleId"));
             }
 
             staffPermissionsService.assignPermissionToStaff(userId, roleId);
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Role assigned successfully"));
+            sendResponse(resp, new ApiResponse<>(200, "Role assigned successfully"));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
         }
     }
 
     @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
         // Lấy thông tin từ JwtFilter
         List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
 
         if (roles == null || !roles.contains("ADMIN")) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
+            sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
             return;
         }
 
@@ -79,7 +93,7 @@ public class StaffPermissionsServlet extends HttpServlet {
                     sb.append(line);
                 }
             } catch (IOException e) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+                sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
                 return;
             }
 
@@ -91,13 +105,13 @@ public class StaffPermissionsServlet extends HttpServlet {
 
             // Validate userId and roleId
             if (userId <= 0 || roleId <= 0) {
-                ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid userId or roleId"));
+                sendResponse(resp, new ApiResponse<>(400, "Invalid userId or roleId"));
             }
 
             staffPermissionsService.removePermissionFromStaff(userId, roleId);
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Role removed successfully"));
+            sendResponse(resp, new ApiResponse<>(200, "Role removed successfully"));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
         }
     }
 }

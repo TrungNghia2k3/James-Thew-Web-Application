@@ -1,5 +1,8 @@
 package com.ntn.culinary.servlet;
 
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
+import com.ntn.culinary.service.JwtService;
 import com.ntn.culinary.utils.GsonUtils;
 import com.ntn.culinary.utils.ValidationUtils;
 import com.ntn.culinary.request.LoginRequest;
@@ -14,12 +17,20 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
 
+import static com.ntn.culinary.utils.ValidationUtils.isNullOrEmpty;
+
 @WebServlet("/api/login")
 public class LoginServlet extends HttpServlet {
-    private final AuthService authService = AuthService.getInstance();
+    private final AuthService authService;
+
+    public LoginServlet() {
+        UserDao userDao = new UserDaoImpl();
+        JwtService jwtService = new JwtService();
+        this.authService = new AuthService(userDao, jwtService);
+    }
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
         // Read request body and build JSON string
         StringBuilder sb = new StringBuilder();
@@ -37,8 +48,8 @@ public class LoginServlet extends HttpServlet {
         LoginRequest loginRequest = GsonUtils.fromJson(sb.toString(), LoginRequest.class);
 
         // Validate input
-        if (ValidationUtils.isNullOrEmpty(loginRequest.getUsername()) ||
-                ValidationUtils.isNullOrEmpty(loginRequest.getPassword())) {
+        if (isNullOrEmpty(loginRequest.getUsername()) ||
+                isNullOrEmpty(loginRequest.getPassword())) {
             ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Username and password are required"));
             return;
         }

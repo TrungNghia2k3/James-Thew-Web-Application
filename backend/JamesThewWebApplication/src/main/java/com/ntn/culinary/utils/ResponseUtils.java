@@ -9,9 +9,14 @@ import java.io.IOException;
 public class ResponseUtils {
     private static final Gson gson = new Gson();
 
-    public static void sendResponse(HttpServletResponse resp, ApiResponse<?> response) throws IOException {
+    public static void sendResponse(HttpServletResponse resp, ApiResponse<?> response) {
         resp.setContentType("application/json");
         resp.setStatus(response.getStatus());
-        resp.getWriter().write(gson.toJson(response));
+        try {
+            resp.getWriter().write(gson.toJson(response));
+        } catch (IOException e) {
+            throw new RuntimeException("IOException occurred while writing response", e);
+        }
+
     }
 }

@@ -1,54 +1,60 @@
 package com.ntn.culinary.service;
 
 import com.ntn.culinary.dao.*;
+import com.ntn.culinary.exception.ConflictException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.ContestEntry;
 import com.ntn.culinary.model.ContestEntryInstruction;
 import com.ntn.culinary.request.ContestEntryRequest;
 import com.ntn.culinary.utils.ImageUtils;
-import org.jetbrains.annotations.NotNull;
 
 import javax.servlet.http.Part;
 import java.sql.Date;
 
+import static com.ntn.culinary.utils.ImageUtils.saveImage;
+import static com.ntn.culinary.utils.ImageUtils.slugify;
+
 public class ContestEntryService {
-    private static final ContestEntryService contestEntryService = new ContestEntryService();
+    private final ContestEntryDao contestEntryDao;
+    private final ContestEntryInstructionsDao contestEntryInstructionsDao;
+    private final UserDao userDao;
+    private final CategoryDao categoryDao;
+    private final AreaDao areaDao;
+    private final ContestDao contestDao;
 
-    private ContestEntryService() {
-        // Private constructor to prevent instantiation
+    public ContestEntryService(ContestEntryDao contestEntryDao, ContestEntryInstructionsDao contestEntryInstructionsDao, UserDao userDao, CategoryDao categoryDao, AreaDao areaDao, ContestDao contestDao) {
+        this.contestEntryDao = contestEntryDao;
+        this.contestEntryInstructionsDao = contestEntryInstructionsDao;
+        this.userDao = userDao;
+        this.categoryDao = categoryDao;
+        this.areaDao = areaDao;
+        this.contestDao = contestDao;
     }
 
-    public static ContestEntryService getInstance() {
-        return contestEntryService;
-    }
-
-    private final ContestEntryDAO contestEntryDAO = ContestEntryDAO.getInstance();
-    private final ContestEntryInstructionsDAO contestEntryInstructionsDAO = ContestEntryInstructionsDAO.getInstance();
-    private final UserDAO userDAO = UserDAO.getInstance();
-    private final ContestDAO contestDAO = ContestDAO.getInstance();
-    private final CategoryDAO categoryDAO = CategoryDAO.getInstance();
-    private final AreaDAO areaDAO = AreaDAO.getInstance();
-
-    public void addContestEntry(ContestEntryRequest contestEntryRequest, Part imagePart) throws Exception {
+    public void addContestEntry(ContestEntryRequest contestEntryRequest, Part imagePart) {
 
         // Validate the contest entry request
         validateContestEntryRequest(contestEntryRequest);
 
         if (imagePart != null && imagePart.getSize() > 0) {
-            String slug = ImageUtils.slugify(contestEntryRequest.getName());
-            String fileName = ImageUtils.saveImage(imagePart, slug, "contest_entries");
+            String slug = slugify(contestEntryRequest.getName());
+            String fileName = saveImage(imagePart, slug, "contest_entries");
             contestEntryRequest.setImage(fileName);
         }
 
+        // Map the request to a ContestEntry model
+        ContestEntry contestEntry = mapRequestToContestEntry(contestEntryRequest);
+
         // insert contest entry
-        contestEntryDAO.addContestEntry(mapRequestToContestEntry(contestEntryRequest));
+        contestEntryDao.addContestEntry(contestEntry);
 
         // get the contest entry ID
-        int contestEntryId = contestEntryDAO.getContestEntryIdByUserIdAndContestId(contestEntryRequest.getUserId(), contestEntryRequest.getContestId());
+        int contestEntryId = contestEntryDao.getContestEntryIdByUserIdAndContestId(contestEntryRequest.getUserId(), contestEntryRequest.getContestId());
 
         // insert contest entry instructions
-        for (ContestEntryInstruction instructions : mapRequestToContestEntry(contestEntryRequest).getContestEntryInstructions()) {
+        for (ContestEntryInstruction instructions : contestEntry.getContestEntryInstructions()) {
 
-            contestEntryInstructionsDAO.addContestEntryInstructions(
+            contestEntryInstructionsDao.addContestEntryInstructions(
                     new ContestEntryInstruction(
                             contestEntryId,
                             instructions.getStepNumber(),
@@ -60,26 +66,26 @@ public class ContestEntryService {
         }
     }
 
-    private void validateContestEntryRequest(@NotNull ContestEntryRequest request) throws Exception {
+    private void validateContestEntryRequest(ContestEntryRequest request) {
 
-        if (!userDAO.existsById(request.getUserId())) {
-            throw new Exception("User with ID " + request.getUserId() + " does not exist.");
+        if (!userDao.existsById(request.getUserId())) {
+            throw new NotFoundException("User with ID does not exist.");
         }
 
-        if (!contestDAO.existsById(request.getContestId())) {
-            throw new Exception("Contest with ID " + request.getContestId() + " does not exist.");
+        if (!contestDao.existsById(request.getContestId())) {
+            throw new NotFoundException("Contest with ID does not exist.");
         }
 
-        if (contestEntryDAO.existsByUserIdAndContestIdAndName(request.getUserId(), request.getContestId(), request.getName()))
-            throw new Exception("Contest entry with the same name already exists for this user and contest.");
-
-        if (!categoryDAO.existsByName(request.getCategory())) {
-            throw new Exception("Category " + request.getCategory() + " does not exist.");
+        if (!categoryDao.existsByName(request.getCategory())) {
+            throw new NotFoundException("Category does not exist.");
         }
 
-        if (!areaDAO.existsByName(request.getArea())) {
-            throw new Exception("Area " + request.getArea() + " does not exist.");
+        if (!areaDao.existsByName(request.getArea())) {
+            throw new NotFoundException("Area does not exist.");
         }
+
+        if (contestEntryDao.existsByUserIdAndContestIdAndName(request.getUserId(), request.getContestId(), request.getName()))
+            throw new ConflictException("Contest entry with the same name already exists for this user and contest.");
     }
 
     private ContestEntry mapRequestToContestEntry(ContestEntryRequest request) {

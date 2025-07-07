@@ -1,40 +1,41 @@
 package com.ntn.culinary.service;
 
-import com.ntn.culinary.dao.UserDAO;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.exception.BadRequestException;
+import com.ntn.culinary.exception.ForbiddenException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.User;
 import org.mindrot.jbcrypt.BCrypt;
 
 public class AuthService {
-    private static final AuthService authService = new AuthService();
+    private final UserDao userDao;
+    private final JwtService jwtService;
 
-    private AuthService() {
-        // Private constructor to prevent instantiation
+    // service giao tiếp với service là bình thường.
+    // Miễn là:
+    // Trách nhiệm rõ ràng.
+    // Không tạo dependency vòng tròn.
+    // Không để service "chồng chất" logic không liên quan.
+
+    public AuthService(UserDao userDao, JwtService jwtService) {
+        this.userDao = userDao;
+        this.jwtService = jwtService;
     }
 
-    public static AuthService getInstance() {
-        return authService;
-    }
-
-    private final UserDAO userDao = UserDAO.getInstance();
-    private final JwtService jwtService = JwtService.getInstance();
-
-    public String authenticate(String username, String password) throws Exception {
+    public String authenticate(String username, String password) {
         User user = userDao.findUserByUsername(username);
 
         if (user == null) {
-            throw new Exception("User not found");
+            throw new NotFoundException("User not found");
         }
 
         if (!user.isActive()) {
-            throw new Exception("User is inactive");
+            throw new ForbiddenException("User is inactive");
         }
 
         if (!BCrypt.checkpw(password, user.getPassword())) {
-            throw new Exception("Invalid password");
+            throw new BadRequestException("Invalid password");
         }
-
         return jwtService.generateJwt(user);
     }
-
-
 }

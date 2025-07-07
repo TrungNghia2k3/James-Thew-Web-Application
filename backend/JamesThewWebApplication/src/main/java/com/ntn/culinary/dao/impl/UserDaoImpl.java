@@ -1,5 +1,6 @@
-package com.ntn.culinary.dao;
+package com.ntn.culinary.dao.impl;
 
+import com.ntn.culinary.dao.UserDao;
 import com.ntn.culinary.utils.DatabaseUtils;
 import com.ntn.culinary.constant.RoleType;
 import com.ntn.culinary.model.Permission;
@@ -13,87 +14,63 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
+import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
-public class UserDAO {
 
-    private static final UserDAO userDAO = new UserDAO();
+public class UserDaoImpl implements UserDao {
+    @Override
+    public void updateUser(User user) {
+        String UPDATE_GENERAL_USER_QUERY = "UPDATE users " +
+                "SET email = ?, first_name = ?, last_name = ?, phone = ?, avatar = ? " +
+                "WHERE id = ?";
 
-    private UserDAO() {
-        // Private constructor to prevent instantiation
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_GENERAL_USER_QUERY)) {
+            stmt.setString(1, user.getEmail());
+            stmt.setString(2, user.getFirstName());
+            stmt.setString(3, user.getLastName());
+            stmt.setString(4, user.getPhone());
+            stmt.setString(5, user.getAvatar());
+            stmt.setInt(6, user.getId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("SQLException: " + e.getMessage());
+        }
     }
 
-    public static UserDAO getInstance() {
-        return userDAO;
-    }
+    public boolean existsById(int id) {
 
-    // ------------------- CRUD OPERATIONS -------------------
-    private static final String SELECT_ALL_USERS_QUERY =
-            "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
-                    "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
-                    "u.highlights, u.experience, u.education, u.social_links, " +
-                    "r.id AS role_id, r.name AS role_name, " +
-                    "p.id AS permission_id, p.name AS permission_name " +
-                    "FROM users u " +
-                    "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                    "LEFT JOIN roles r ON ur.role_id = r.id " +
-                    "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                    "LEFT JOIN permissions p ON sp.permission_id = p.id";
+        String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
 
-    private static final String SELECT_USER_BY_ID_QUERY =
-            "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, u.created_at, " +
-                    "u.is_active, u.avatar, u.location, u.school, u.highlights, u.experience, u.education, u.social_links, " +
-                    "r.id AS role_id, r.name AS role_name, " +
-                    "p.id AS permission_id, p.name AS permission_name " +
-                    "FROM users u " +
-                    "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                    "LEFT JOIN roles r ON ur.role_id = r.id " +
-                    "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                    "LEFT JOIN permissions p ON sp.permission_id = p.id " +
-                    "WHERE u.id = ?";
-
-    // ------------------- INSERT QUERIES -------------------
-    private static final String INSERT_USER_QUERY = "INSERT INTO users (username, password, created_at, is_active) VALUES (?, ?, NOW(), true)";
-    private static final String GET_USER_ID = "SELECT id FROM users WHERE username = ?";
-    private static final String GET_ROLE_ID = "SELECT id FROM roles WHERE name = ?";
-    private static final String INSERT_USER_ROLE = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
-
-    private static final String UPDATE_GENERAL_USER_QUERY = "UPDATE users " +
-            "SET email = ?, first_name = ?, last_name = ?, phone = ?, avatar = ? " +
-            "WHERE id = ?";
-    private static final String DELETE_USER_QUERY = "DELETE FROM users WHERE id = ?";
-    private static final String SELECT_USER_BY_USERNAME_QUERY =
-            "SELECT u.id, u.username, u.password, u.is_active, " +
-                    "r.id AS role_id, r.name AS role_name, " +
-                    "p.id AS permission_id, p.name AS permission_name " +
-                    "FROM users u " +
-                    "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                    "LEFT JOIN roles r ON ur.role_id = r.id " +
-                    "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                    "LEFT JOIN permissions p ON sp.permission_id = p.id " +
-                    "WHERE u.username = ?";
-    private static final String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE id = ?";
-    private static final String CHECK_USER_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
-    private static final String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
-
-    private static final String UPDATE_USER_ACTIVE_STATUS_QUERY = "UPDATE users " +
-            "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
-            "WHERE id = ?";
-
-    public boolean existsById(int id) throws SQLException {
-        try (Connection conn = DatabaseUtils.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(CHECK_USER_ID_EXISTS_QUERY)) {
 
             stmt.setInt(1, id);
             try (ResultSet rs = stmt.executeQuery()) {
                 return rs.next(); // true nếu tồn tại user có id đó
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
     }
 
-    public List<User> getAllUsers() throws SQLException {
+    public List<User> getAllUsers() {
+
+        final String SELECT_ALL_USERS_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                        "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                        "u.highlights, u.experience, u.education, u.social_links, " +
+                        "r.id AS role_id, r.name AS role_name, " +
+                        "p.id AS permission_id, p.name AS permission_name " +
+                        "FROM users u " +
+                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                        "LEFT JOIN roles r ON ur.role_id = r.id " +
+                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                        "LEFT JOIN permissions p ON sp.permission_id = p.id";
+
         Map<Integer, User> userMap = new HashMap<>(); // map userId -> User
 
-        try (Connection conn = DatabaseUtils.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_USERS_QUERY);
              ResultSet rs = stmt.executeQuery()) {
 
@@ -142,16 +119,31 @@ public class UserDAO {
                     user.getPermissions().add(permission); // Thêm permission vào set
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
         }
 
         // Trả về danh sách users
         return new ArrayList<>(userMap.values());
     }
 
-    public User getUserById(int id) throws SQLException {
+    public User getUserById(int id) {
+
+        String SELECT_USER_BY_ID_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, u.created_at, " +
+                        "u.is_active, u.avatar, u.location, u.school, u.highlights, u.experience, u.education, u.social_links, " +
+                        "r.id AS role_id, r.name AS role_name, " +
+                        "p.id AS permission_id, p.name AS permission_name " +
+                        "FROM users u " +
+                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                        "LEFT JOIN roles r ON ur.role_id = r.id " +
+                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                        "LEFT JOIN permissions p ON sp.permission_id = p.id " +
+                        "WHERE u.id = ?";
+
         Map<Integer, User> userMap = new HashMap<>();
 
-        try (Connection conn = DatabaseUtils.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_ID_QUERY)) {
 
             stmt.setInt(1, id);
@@ -202,17 +194,24 @@ public class UserDAO {
                     }
                 }
             }
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
 
         // Vì chỉ có 1 user, trả về hoặc null nếu không tìm thấy
         return userMap.values().stream().findFirst().orElse(null);
     }
 
-    public void addUser(User user) throws SQLException {
+    public void addUser(User user) {
+
+        String GET_USER_ID = "SELECT id FROM users WHERE username = ?";
+        String GET_ROLE_ID = "SELECT id FROM roles WHERE name = ?";
+        String INSERT_USER_ROLE = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
+        String INSERT_USER_QUERY = "INSERT INTO users (username, password, created_at, is_active) VALUES (?, ?, NOW(), true)";
 
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 
-        try (Connection conn = DatabaseUtils.getConnection()) {
+        try (Connection conn = getConnection()) {
             conn.setAutoCommit(false); // Bắt đầu transaction
 
             // 1. Insert user
@@ -261,16 +260,16 @@ public class UserDAO {
             conn.commit(); // Commit nếu mọi thứ thành công
         } catch (SQLException e) {
             if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("users.username")) {
-                throw new SQLException("Username '" + user.getUsername() + "' already exists");
+                throw new RuntimeException("Username '" + user.getUsername() + "' already exists");
             } else if (e.getMessage().contains("Duplicate entry") && e.getMessage().contains("users.email")) {
-                throw new SQLException("Email '" + user.getEmail() + "' already exists");
+                throw new RuntimeException("Email '" + user.getEmail() + "' already exists");
             } else {
-                throw new SQLException("Error adding user and assigning role: " + e.getMessage(), e);
+                throw new RuntimeException("Error adding user and assigning role: " + e.getMessage(), e);
             }
         }
     }
 
-    public void editGeneralUser(User user) throws SQLException {
+    public void editGeneralUser(User user) {
         StringBuilder queryBuilder = new StringBuilder("UPDATE users SET ");
         List<Object> params = new ArrayList<>();
 
@@ -298,7 +297,7 @@ public class UserDAO {
 
         // Nếu không có field nào cần update thì bỏ qua
         if (params.isEmpty()) {
-            throw new SQLException("No fields to update for user id: " + user.getId());
+            throw new RuntimeException("No fields to update for user id: " + user.getId());
         }
 
         // Xóa dấu phẩy cuối cùng
@@ -313,7 +312,7 @@ public class UserDAO {
         String finalQuery = queryBuilder.toString();
         System.out.println("SQL UPDATE query: " + finalQuery);
 
-        try (Connection conn = DatabaseUtils.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(finalQuery)) {
 
             for (int i = 0; i < params.size(); i++) {
@@ -323,37 +322,53 @@ public class UserDAO {
             stmt.executeUpdate();
 
         } catch (SQLException e) {
-            throw new SQLException("Error while updating user: " + e.getMessage(), e);
+            throw new RuntimeException("Error while updating user: " + e.getMessage(), e);
         }
     }
 
-    public void deleteUser(int id) throws SQLException {
+    public void deleteUser(int id) {
 
-        try (Connection conn = DatabaseUtils.getConnection();
+        String DELETE_USER_QUERY = "DELETE FROM users WHERE id = ?";
+
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(DELETE_USER_QUERY)) {
 
             stmt.setInt(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new SQLException("Error while deleting user: " + e.getMessage(), e);
+            throw new RuntimeException("Error while deleting user: " + e.getMessage(), e);
         }
     }
 
-    public void toggleUserActiveStatus(int id) throws SQLException {
+    public void toggleUserActiveStatus(int id) {
 
-        try (Connection conn = DatabaseUtils.getConnection();
+        String UPDATE_USER_ACTIVE_STATUS_QUERY = "UPDATE users " +
+                "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
+                "WHERE id = ?";
+
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_ACTIVE_STATUS_QUERY)) {
             stmt.setInt(1, id);
             stmt.executeUpdate();
         } catch (SQLException e) {
-            throw new SQLException("Error while toggling user active status: " + e.getMessage(), e);
+            throw new RuntimeException("Error while toggling user active status: " + e.getMessage(), e);
         }
     }
 
-    // ------------------- AUTHENTICATION & SUBSCRIPTION -------------------
+    public User findUserByUsername(String username) {
 
-    public User findUserByUsername(String username) throws SQLException {
-        try (Connection conn = DatabaseUtils.getConnection();
+        String SELECT_USER_BY_USERNAME_QUERY =
+                "SELECT u.id, u.username, u.password, u.is_active, " +
+                        "r.id AS role_id, r.name AS role_name, " +
+                        "p.id AS permission_id, p.name AS permission_name " +
+                        "FROM users u " +
+                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                        "LEFT JOIN roles r ON ur.role_id = r.id " +
+                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                        "LEFT JOIN permissions p ON sp.permission_id = p.id " +
+                        "WHERE u.username = ?";
+
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
             stmt.setString(1, username);
             ResultSet rs = stmt.executeQuery();
@@ -390,12 +405,15 @@ public class UserDAO {
 
             return user;
         } catch (SQLException e) {
-            throw new SQLException("Error while fetching user by username: " + e.getMessage());
+            throw new RuntimeException("Error while fetching user by username: " + e.getMessage());
         }
     }
 
-    public boolean isSubscriptionValid(int userId) throws SQLException {
-        try (Connection conn = DatabaseUtils.getConnection();
+    public boolean isSubscriptionValid(int userId) {
+
+        String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE id = ?";
+
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_SUBSCRIPTION_QUERY)) {
 
             stmt.setInt(1, userId);
@@ -408,25 +426,23 @@ public class UserDAO {
 
             return false;
         } catch (SQLException e) {
-            throw new SQLException("Error while checking subscription validity: " + e.getMessage(), e);
+            throw new RuntimeException("Error while checking subscription validity: " + e.getMessage(), e);
         }
     }
 
-    // ------------------- UTILITIES -------------------
+    @Override
+    public boolean userExists(int id) {
+        String CHECK_USER_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ?";
 
-    private boolean userExists(int id) {
-        try (Connection conn = DatabaseUtils.getConnection();
+        try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(CHECK_USER_EXISTS_QUERY)) {
 
             stmt.setInt(1, id);
-            try (ResultSet rs = stmt.executeQuery()) {
-                return !rs.next(); // true if user exists
-            }
+
+            return stmt.executeUpdate() > 0;
 
         } catch (SQLException e) {
-            return true; // If there's an error, we assume the user doesn't exist
+            throw new RuntimeException("Error while checking user exists: " + e.getMessage(), e);
         }
     }
 }
-
-

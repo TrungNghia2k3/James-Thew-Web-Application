@@ -1,6 +1,12 @@
 package com.ntn.culinary.servlet.staff;
 
 import com.ntn.culinary.constant.PermissionType;
+import com.ntn.culinary.dao.ContestEntryDao;
+import com.ntn.culinary.dao.ContestEntryExaminersDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.ContestEntryDaoImpl;
+import com.ntn.culinary.dao.impl.ContestEntryExaminersDaoImpl;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.request.ContestEntryExaminersRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.ContestEntryExaminersService;
@@ -19,48 +25,54 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.utils.CastUtils.toStringList;
+import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
+
 @WebServlet("/api/protected/staff/contest-entry-examiners")
 public class ContestEntryExaminersServlet extends HttpServlet {
 
-    private final ContestEntryExaminersService contestEntryExaminersService = ContestEntryExaminersService.getInstance();
+    private final ContestEntryExaminersService contestEntryExaminersService;
+
+    public ContestEntryExaminersServlet() {
+        ContestEntryDao contestEntryDao = new ContestEntryDaoImpl();
+        ContestEntryExaminersDao contestEntryExaminersDao = new ContestEntryExaminersDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+        this.contestEntryExaminersService = new ContestEntryExaminersService(contestEntryDao, contestEntryExaminersDao, userDao);
+    }
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         // Lấy thông tin từ JwtFilter
-        List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
+        List<String> roles = toStringList(req.getAttribute("roles"));
 
         if (roles == null || !roles.contains("STAFF")) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: STAFF role required"));
+            sendResponse(resp, new ApiResponse<>(403, "Access denied: STAFF role required"));
             return;
         }
 
-        List<String> permissions = CastUtils.toStringList(req.getAttribute("permissions"));
+        List<String> permissions = toStringList(req.getAttribute("permissions"));
 
         if (permissions == null || !permissions.contains(String.valueOf(PermissionType.MANAGE_CONTESTS))) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: ANSWER_QUESTIONS permission required"));
+            sendResponse(resp, new ApiResponse<>(403, "Access denied: ANSWER_QUESTIONS permission required"));
             return;
         }
-
-        // Truy cập thành công
-        resp.setStatus(HttpServletResponse.SC_OK);
-        resp.getWriter().write("{\"message\":\"Welcome, STAFF with permission!\"}");
     }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
         // Lấy thông tin từ JwtFilter
-        List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
+        List<String> roles = toStringList(req.getAttribute("roles"));
 
         if (roles == null || !roles.contains("STAFF")) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: STAFF role required"));
+            sendResponse(resp, new ApiResponse<>(403, "Access denied: STAFF role required"));
             return;
         }
 
-        List<String> permissions = CastUtils.toStringList(req.getAttribute("permissions"));
+        List<String> permissions = toStringList(req.getAttribute("permissions"));
 
         if (permissions == null || !permissions.contains(String.valueOf(PermissionType.MANAGE_CONTESTS))) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: MANAGE_CONTESTS permission required"));
+            sendResponse(resp, new ApiResponse<>(403, "Access denied: MANAGE_CONTESTS permission required"));
             return;
         }
 
@@ -72,7 +84,7 @@ public class ContestEntryExaminersServlet extends HttpServlet {
                 sb.append(line);
             }
         } catch (IOException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
         }
 
 
@@ -83,15 +95,15 @@ public class ContestEntryExaminersServlet extends HttpServlet {
         Map<String, String> errors = validateContestEntryExaminersRequest(contestEntryExaminersRequest);
 
         if (!errors.isEmpty()) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Validation errors", errors));
+            sendResponse(resp, new ApiResponse<>(400, "Validation errors", errors));
             return;
         }
 
         try {
             contestEntryExaminersService.addExaminer(contestEntryExaminersRequest);
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Contest entry examiners added successfully"));
+            sendResponse(resp, new ApiResponse<>(200, "Contest entry examiners added successfully"));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 

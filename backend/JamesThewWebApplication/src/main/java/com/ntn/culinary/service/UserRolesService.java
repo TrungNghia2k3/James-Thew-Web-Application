@@ -1,41 +1,39 @@
 package com.ntn.culinary.service;
 
-import com.ntn.culinary.dao.RoleDAO;
-import com.ntn.culinary.dao.UserDAO;
-import com.ntn.culinary.dao.UserRolesDAO;
+import com.ntn.culinary.dao.RoleDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.UserRolesDao;
+import com.ntn.culinary.exception.NotFoundException;
 
 public class UserRolesService {
-    private static final UserRolesService userRolesService = new UserRolesService();
 
-    private UserRolesService() {
-        // Private constructor to prevent instantiation
+    private final UserRolesDao userRolesDao;
+    private final UserDao userDao;
+    private final RoleDao roleDao;
+
+    public UserRolesService(UserRolesDao userRolesDao, UserDao userDao, RoleDao roleDao) {
+        this.userRolesDao = userRolesDao;
+        this.userDao = userDao;
+        this.roleDao = roleDao;
     }
 
-    public static UserRolesService getInstance() {
-        return userRolesService;
+    public void assignRoleToUser(int userId, int roleId) {
+        if (!userDao.existsById(userId)) {
+            throw new NotFoundException("User does not exist");
+        }
+        if (!roleDao.existsById(roleId)) {
+            throw new NotFoundException("Role does not exist");
+        }
+        userRolesDao.assignRoleToUser(userId, roleId);
     }
 
-    private final UserRolesDAO userRolesDAO = UserRolesDAO.getInstance();
-    private final UserDAO userDAO = UserDAO.getInstance();
-    private final RoleDAO roleDAO = RoleDAO.getInstance();
-
-    public void assignRoleToUser(int userId, int roleId) throws Exception {
-        if (!userDAO.existsById(userId)) {
-            throw new Exception("User does not exist");
+    public void removeRoleFromUser(int userId, int roleId) {
+        if (!userDao.existsById(userId)) {
+            throw new NotFoundException("User does not exist");
         }
-        if (!roleDAO.existsById(roleId)) {
-            throw new Exception("Role does not exist");
+        if (!roleDao.existsById(roleId)) {
+            throw new NotFoundException("Role does not exist");
         }
-        userRolesDAO.assignRoleToUser(userId, roleId);
-    }
-
-    public void removeRoleFromUser(int userId, int roleId) throws Exception {
-        if (!userDAO.existsById(userId)) {
-            throw new Exception("User does not exist");
-        }
-        if (!roleDAO.existsById(roleId)) {
-            throw new Exception("Role does not exist");
-        }
-        userRolesDAO.removeRoleFromUser(userId, roleId);
+        userRolesDao.removeRoleFromUser(userId, roleId);
     }
 }

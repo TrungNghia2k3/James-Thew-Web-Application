@@ -1,5 +1,13 @@
 package com.ntn.culinary.servlet.admin;
 
+import com.ntn.culinary.dao.AnnounceWinnerDao;
+import com.ntn.culinary.dao.AnnouncementDao;
+import com.ntn.culinary.dao.ContestDao;
+import com.ntn.culinary.dao.ContestEntryDao;
+import com.ntn.culinary.dao.impl.AnnounceWinnerDaoImpl;
+import com.ntn.culinary.dao.impl.AnnouncementDaoImpl;
+import com.ntn.culinary.dao.impl.ContestDaoImpl;
+import com.ntn.culinary.dao.impl.ContestEntryDaoImpl;
 import com.ntn.culinary.model.AnnounceWinner;
 import com.ntn.culinary.request.AnnouncementRequest;
 import com.ntn.culinary.response.ApiResponse;
@@ -15,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedReader;
 import java.io.IOException;
+import java.rmi.ServerException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -22,12 +31,21 @@ import java.util.Map;
 @WebServlet("/api/protected/admin/announcements")
 public class AnnouncementServlet extends HttpServlet {
 
-    private final AnnouncementService announcementService = AnnouncementService.getInstance();
+    private final AnnouncementService announcementService;
+
+    public AnnouncementServlet() {
+        ContestDao contestDao = new ContestDaoImpl();
+        AnnouncementDao announcementDao = new AnnouncementDaoImpl();
+        AnnounceWinnerDao announceWinnerDao = new AnnounceWinnerDaoImpl();
+        ContestEntryDao contestEntryDao = new ContestEntryDaoImpl();
+
+        this.announcementService = new AnnouncementService(contestDao, announcementDao, announceWinnerDao, contestEntryDao);
+    }
 
     // Xem thông tin thông báo, có thể lọc theo ID, có thể lấy tất cả thông báo, chỉnh sửa thông báo, xóa thông báo
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
 
         // Lấy thông tin từ JwtFilter
         List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));

@@ -1,5 +1,7 @@
 package com.ntn.culinary.filter;
 
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.JwtService;
 import com.ntn.culinary.service.UserService;
@@ -24,8 +26,14 @@ import java.util.stream.Collectors;
 @WebFilter(urlPatterns = "/api/protected/*")
 public class JwtFilter implements Filter {
 
-    private final JwtService jwtService = JwtService.getInstance();
-    private final UserService userService = UserService.getInstance();
+    private final JwtService jwtService;
+    private final UserService userService;
+
+    public JwtFilter() {
+        UserDao userDao = new UserDaoImpl();
+        this.jwtService = new JwtService();
+        this.userService = new UserService(userDao);
+    }
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {

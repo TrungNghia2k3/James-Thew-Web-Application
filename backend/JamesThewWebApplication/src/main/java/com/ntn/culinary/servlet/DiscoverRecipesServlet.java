@@ -1,27 +1,43 @@
 package com.ntn.culinary.servlet;
 
+import com.ntn.culinary.dao.AreaDao;
+import com.ntn.culinary.dao.CategoryDao;
+import com.ntn.culinary.dao.RecipeDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.AreaDaoImpl;
+import com.ntn.culinary.dao.impl.CategoryDaoImpl;
+import com.ntn.culinary.dao.impl.RecipeDaoImpl;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.RecipePageResponse;
 import com.ntn.culinary.response.RecipeResponse;
 import com.ntn.culinary.service.RecipeService;
-import com.ntn.culinary.utils.ResponseUtils;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.sql.SQLException;
 import java.util.List;
+
+import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/discover/recipes")
 public class DiscoverRecipesServlet extends HttpServlet {
-    private final RecipeService recipeService = RecipeService.getInstance();
+    private final RecipeService recipeService;
+
+    public DiscoverRecipesServlet() {
+        RecipeDao recipeDao = new RecipeDaoImpl();
+        CategoryDao categoryDao = new CategoryDaoImpl();
+        AreaDao areaDao = new AreaDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+
+        this.recipeService = new RecipeService(recipeDao, categoryDao, areaDao, userDao);
+    }
 
     // Thêm nhiều các bộ lọc và tìm kiếm cho các công thức nấu ăn
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
 
         // Get parameters from the request
         String pageParam = req.getParameter("page");
@@ -37,11 +53,11 @@ public class DiscoverRecipesServlet extends HttpServlet {
         try {
             handleGetListRecipe(resp, pageParam, sizeParam, keyword, category, area, recipedBy);
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
-    private void handleGetListRecipe(HttpServletResponse resp,String pageParam, String sizeParam, String keyword, String category, String area, int recipedBy) throws IOException, SQLException {
+    private void handleGetListRecipe(HttpServletResponse resp,String pageParam, String sizeParam, String keyword, String category, String area, int recipedBy){
         int page = parseOrDefault(pageParam, 1);
         int size = parseOrDefault(sizeParam, 10);
 
@@ -56,7 +72,7 @@ public class DiscoverRecipesServlet extends HttpServlet {
         int totalPages = (int) Math.ceil((double) totalItems / size);
         RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
 
-        ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
+        sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
     }
 
     private int parseOrDefault(String param, int defaultValue) {

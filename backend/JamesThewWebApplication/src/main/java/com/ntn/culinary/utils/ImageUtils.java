@@ -8,6 +8,7 @@ public class ImageUtils {
 
     /**
      * Lưu file ảnh upload vào thư mục /images/recipes của webapp
+     *
      * @param imagePart Part lấy từ request.getPart("image")
      * @param servletContext để lấy đường dẫn tuyệt đối
      * @param baseFileName Chuỗi base để tạo tên file (vd: slug của tên recipe)
@@ -17,7 +18,7 @@ public class ImageUtils {
     // Chỉ định đường dẫn tuyệt đối đến thư mục chứa ảnh
     private static final String IMAGE_DIRECTORY = "E:/Project/JamesThewWebApplication/source-code/backend/images";
 
-    public static String saveImage(Part imagePart, String baseFileName, String type) throws IOException {
+    public static String saveImage(Part imagePart, String baseFileName, String type) {
         if (imagePart == null || imagePart.getSize() == 0) {
             return null;
         }
@@ -41,15 +42,21 @@ public class ImageUtils {
         File file = new File(uploadDir, filename);
 
         // Ghi file
-        imagePart.write(file.getAbsolutePath());
+        try {
+            imagePart.write(file.getAbsolutePath());
+
+        } catch (IOException ex) {
+            throw new RuntimeException("Could not save image", ex);
+        }
 
         return filename;
     }
 
     /**
      * Xóa ảnh đã lưu từ thư mục chứa ảnh
+     *
      * @param filename Tên file cần xóa (vd: apple-frangipan-1689012345678.jpg)
-     * @param type Thư mục con (vd: "recipes", "avatars", ...)
+     * @param type     Thư mục con (vd: "recipes", "avatars", ...)
      * @return true nếu xóa thành công, false nếu file không tồn tại
      */
     public static boolean deleteImage(String filename, String type) {

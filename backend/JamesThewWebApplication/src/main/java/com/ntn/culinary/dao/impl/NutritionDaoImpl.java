@@ -1,31 +1,29 @@
-package com.ntn.culinary.dao;
+package com.ntn.culinary.dao.impl;
 
+import com.ntn.culinary.dao.NutritionDao;
 import com.ntn.culinary.model.Nutrition;
-import com.ntn.culinary.utils.DatabaseUtils;
 
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 
-public class NutritionDAO {
-    private static final NutritionDAO nutritionDAO = new NutritionDAO();
+import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
-    private NutritionDAO() {
-        // Private constructor to prevent instantiation
-    }
+public class NutritionDaoImpl implements NutritionDao {
 
-    public static NutritionDAO getInstance() {
-        return nutritionDAO;
-    }
 
-    private static final String SELECT_NUTRITION_BY_RECIPE_ID_QUERY = """
-            SELECT * FROM nutritions WHERE recipe_id = ?
-            """;
+    public Nutrition getNutritionByRecipeId(int recipeId) {
 
-    public Nutrition getNutritionByRecipeId(int recipeId) throws SQLException {
-        try (var conn = DatabaseUtils.getConnection();
-             var stmt = conn.prepareStatement(SELECT_NUTRITION_BY_RECIPE_ID_QUERY)) {
+        String SELECT_NUTRITION_BY_RECIPE_ID_QUERY = """
+                SELECT * FROM nutritions WHERE recipe_id = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_NUTRITION_BY_RECIPE_ID_QUERY)) {
 
             stmt.setInt(1, recipeId);
-            try (var rs = stmt.executeQuery()) {
+            try (ResultSet rs = stmt.executeQuery();) {
                 if (rs.next()) {
                     Nutrition nutrition = new Nutrition();
                     nutrition.setId(rs.getInt("id"));
@@ -43,6 +41,8 @@ public class NutritionDAO {
                     return null; // No nutrition data found for the given recipe ID
                 }
             }
+        } catch (SQLException e) {
+            throw new RuntimeException("SQLException: " + e.getMessage());
         }
     }
 }

@@ -1,6 +1,8 @@
 package com.ntn.culinary.servlet.general;
 
 import com.google.gson.reflect.TypeToken;
+import com.ntn.culinary.dao.*;
+import com.ntn.culinary.dao.impl.*;
 import com.ntn.culinary.model.ContestEntryInstruction;
 import com.ntn.culinary.request.ContestEntryRequest;
 import com.ntn.culinary.response.ApiResponse;
@@ -25,7 +27,18 @@ import java.util.Map;
 @WebServlet("/api/protected/general/contest-entry")
 @MultipartConfig
 public class ContestEntryServlet extends HttpServlet {
-    private final ContestEntryService contestEntryService = ContestEntryService.getInstance();
+    private final ContestEntryService contestEntryService;
+
+    public ContestEntryServlet() {
+        ContestEntryDao contestEntryDao = new ContestEntryDaoImpl();
+        ContestEntryInstructionsDao contestEntryInstructionsDao = new ContestEntryInstructionsDaoImpl();
+        UserDao userDao = new UserDaoImpl();
+        CategoryDao categoryDao = new CategoryDaoImpl();
+        AreaDao areaDao = new AreaDaoImpl();
+        ContestDao contestDao = new ContestDaoImpl();
+
+        this.contestEntryService = new ContestEntryService(contestEntryDao, contestEntryInstructionsDao, userDao, categoryDao, areaDao, contestDao);
+    }
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) throws IOException {

@@ -1,5 +1,7 @@
 package com.ntn.culinary.servlet.general;
 
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.request.UserRequest;
 import com.ntn.culinary.utils.ValidationUtils;
 import com.ntn.culinary.response.ApiResponse;
@@ -21,7 +23,12 @@ import java.util.Map;
 @WebServlet("/api/protected/general/users")
 @MultipartConfig
 public class UserServlet extends HttpServlet {
-    private final UserService userService = UserService.getInstance();
+    private final UserService userService;
+
+    public UserServlet() {
+        UserDao userDao = new UserDaoImpl();
+        this.userService = new UserService(userDao);
+    }
 
     @Override
     protected void doPut(HttpServletRequest req, HttpServletResponse resp) throws IOException {

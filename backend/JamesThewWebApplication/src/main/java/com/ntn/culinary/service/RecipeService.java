@@ -1,10 +1,11 @@
 package com.ntn.culinary.service;
 
 import com.ntn.culinary.constant.AccessType;
-import com.ntn.culinary.dao.AreaDAO;
-import com.ntn.culinary.dao.CategoryDAO;
-import com.ntn.culinary.dao.RecipeDAO;
-import com.ntn.culinary.dao.UserDAO;
+import com.ntn.culinary.dao.AreaDao;
+import com.ntn.culinary.dao.CategoryDao;
+import com.ntn.culinary.dao.RecipeDao;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.DetailedInstructions;
 import com.ntn.culinary.model.Recipe;
 import com.ntn.culinary.request.RecipeRequest;
@@ -18,22 +19,19 @@ import java.sql.SQLException;
 import java.util.List;
 
 public class RecipeService {
-    private static final RecipeService recipeService = new RecipeService();
+    private final RecipeDao recipeDao;
+    private final CategoryDao categoryDao;
+    private final AreaDao areaDao;
+    private final UserDao userDao;
 
-    private RecipeService() {
-        // Private constructor to prevent instantiation
+    public RecipeService(RecipeDao recipeDao, CategoryDao categoryDao, AreaDao areaDao, UserDao userDao) {
+        this.recipeDao = recipeDao;
+        this.categoryDao = categoryDao;
+        this.areaDao = areaDao;
+        this.userDao = userDao;
     }
 
-    public static RecipeService getInstance() {
-        return recipeService;
-    }
-
-    private final RecipeDAO recipeDao = RecipeDAO.getInstance();
-    private final CategoryDAO categoryDao = CategoryDAO.getInstance();
-    private final AreaDAO areaDao = AreaDAO.getInstance();
-    private final UserDAO userDAO = UserDAO.getInstance();
-
-    public void addRecipe(RecipeRequest recipeRequest, Part imagePart) throws Exception {
+    public void addRecipe(RecipeRequest recipeRequest, Part imagePart) {
         validateRecipeRequest(recipeRequest);
 
         if (imagePart != null && imagePart.getSize() > 0) {
@@ -45,7 +43,7 @@ public class RecipeService {
         recipeDao.addRecipe(mapRequestToRecipe(recipeRequest));
     }
 
-    public RecipeResponse getFreeRecipeById(int id) throws SQLException {
+    public RecipeResponse getFreeRecipeById(int id)  {
         Recipe recipe = recipeDao.getFreeRecipeById(id);
         if (recipe == null) {
             return null;
@@ -53,13 +51,13 @@ public class RecipeService {
         return mapRecipeToResponse(recipe);
     }
 
-    public List<RecipeResponse> getAllFreeRecipes(int page, int size) throws SQLException {
+    public List<RecipeResponse> getAllFreeRecipes(int page, int size){
         return recipeDao.getAllFreeRecipes(page, size).stream()
                 .map(this::mapRecipeToResponse)
                 .toList();
     }
 
-    public List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType, int page, int size) throws SQLException {
+    public List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType, int page, int size) {
 
         if (category != null) {
             category = StringUtils.capitalize(category);
@@ -74,7 +72,7 @@ public class RecipeService {
                 .toList();
     }
 
-    public int countSearchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType) throws SQLException {
+    public int countSearchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType) {
 
         if (category != null) {
             category = StringUtils.capitalize(category);
@@ -87,24 +85,24 @@ public class RecipeService {
         return recipeDao.countSearchAndFilterFreeRecipes(keyword, category, area, recipedBy, accessType.toUpperCase());
     }
 
-    public int countAllFreeRecipes() throws SQLException {
+    public int countAllFreeRecipes() {
         return recipeDao.countAllFreeRecipes();
     }
 
-    private void validateRecipeRequest(RecipeRequest recipeRequest) throws Exception {
+    private void validateRecipeRequest(RecipeRequest recipeRequest){
         if (!categoryDao.existsByName(recipeRequest.getCategory())) {
-            throw new Exception("Category does not exist");
+            throw new NotFoundException("Category does not exist");
         }
         if (!areaDao.existsByName(recipeRequest.getArea())) {
-            throw new Exception("Area does not exist");
+            throw new NotFoundException("Area does not exist");
         }
         String accessType = recipeRequest.getAccessType();
         if (!String.valueOf(AccessType.FREE).equalsIgnoreCase(accessType) &&
                 !String.valueOf(AccessType.PAID).equalsIgnoreCase(accessType)) {
-            throw new Exception("Invalid access type");
+            throw new NotFoundException("Invalid access type");
         }
-        if (!userDAO.existsById(recipeRequest.getRecipedBy())) {
-            throw new Exception("User does not exist");
+        if (!userDao.existsById(recipeRequest.getRecipedBy())) {
+            throw new NotFoundException("User does not exist");
         }
     }
 

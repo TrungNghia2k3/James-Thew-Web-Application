@@ -1,6 +1,7 @@
 package com.ntn.culinary.service;
 
-import com.ntn.culinary.dao.UserDAO;
+import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.User;
 import com.ntn.culinary.request.RegisterRequest;
 import com.ntn.culinary.request.UserRequest;
@@ -15,26 +16,20 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 public class UserService {
-    private static final UserService userService = new UserService();
+    private final UserDao userDao;
 
-    private UserService() {
-        // Private constructor to prevent instantiation
+    public UserService(UserDao userDao) {
+        this.userDao = userDao;
     }
 
-    public static UserService getInstance() {
-        return userService;
-    }
-
-    private final UserDAO userDao = UserDAO.getInstance();
-
-    public List<UserResponse> getAllUsers() throws SQLException {
+    public List<UserResponse> getAllUsers() {
         List<User> users = userDao.getAllUsers();
         return users.stream()
                 .map(this::mapUserToResponse)
                 .collect(Collectors.toList());
     }
 
-    public UserResponse getUserById(int id) throws SQLException {
+    public UserResponse getUserById(int id) {
         User user = userDao.getUserById(id);
         if (user == null) {
             return null;
@@ -42,16 +37,16 @@ public class UserService {
         return mapUserToResponse(user);
     }
 
-    public void register(RegisterRequest request) throws SQLException {
+    public void register(RegisterRequest request) {
         User user = mapRequestToRegisterRequest(request);
         userDao.addUser(user);
     }
 
-    public void editGeneralUser(UserRequest request, Part avatar) throws Exception {
+    public void editGeneralUser(UserRequest request, Part avatar) {
         User existingUser = userDao.getUserById(request.getId());
 
         if (existingUser == null) {
-            throw new Exception("User with ID " + request.getId() + " not found.");
+            throw new NotFoundException("User with ID " + request.getId() + " not found.");
         }
 
         if (avatar != null && avatar.getSize() > 0) {
@@ -71,28 +66,28 @@ public class UserService {
         userDao.editGeneralUser(mapRequestToUser(request));
     }
 
-    public void deleteUser(int id) throws Exception {
+    public void deleteUser(int id) {
         User existingUser = userDao.getUserById(id);
 
         if (existingUser == null) {
-            throw new Exception("User with ID " + id + " not found.");
+            throw new NotFoundException("User with ID " + id + " not found.");
         }
 
         userDao.deleteUser(id);
     }
 
-    public void toggleUserStatus(int id) throws Exception {
+    public void toggleUserStatus(int id) {
 
         User existingUser = userDao.getUserById(id);
 
         if (existingUser == null) {
-            throw new Exception("User with ID " + id + " not found.");
+            throw new NotFoundException("User with ID " + id + " not found.");
         }
 
         userDao.toggleUserActiveStatus(id);
     }
 
-    public boolean isSubscriptionValid(int id) throws SQLException {
+    public boolean isSubscriptionValid(int id) {
         return userDao.isSubscriptionValid(id);
     }
 

@@ -18,7 +18,7 @@ public class ImageServlet extends HttpServlet {
     private static final String BASE_PATH = "E:/Project/JamesThewWebApplication/source-code/backend/images/";
 
     @Override
-    protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws IOException {
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         // Lấy phần path sau /api/images/
         String pathInfo = req.getPathInfo(); // Ví dụ: /recipes/abc.jpg hoặc /avatars/def.png
 
@@ -60,6 +60,8 @@ public class ImageServlet extends HttpServlet {
             while ((bytesRead = in.read(buffer)) != -1) {
                 out.write(buffer, 0, bytesRead);
             }
+        } catch (IOException ioe) {
+            throw new RuntimeException("IO exception", ioe);
         }
     }
 }

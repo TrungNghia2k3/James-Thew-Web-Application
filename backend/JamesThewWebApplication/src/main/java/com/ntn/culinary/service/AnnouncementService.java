@@ -1,42 +1,70 @@
 package com.ntn.culinary.service;
 
-import com.ntn.culinary.dao.AnnounceWinnerDAO;
-import com.ntn.culinary.dao.AnnouncementDAO;
-import com.ntn.culinary.dao.ContestDAO;
+import com.ntn.culinary.dao.AnnounceWinnerDao;
+import com.ntn.culinary.dao.AnnouncementDao;
+import com.ntn.culinary.dao.ContestDao;
+import com.ntn.culinary.dao.ContestEntryDao;
+import com.ntn.culinary.exception.ConflictException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.AnnounceWinner;
 import com.ntn.culinary.model.Announcement;
 import com.ntn.culinary.request.AnnouncementRequest;
+import com.ntn.culinary.response.AnnounceWinnerResponse;
+import com.ntn.culinary.response.AnnouncementResponse;
 
 import java.sql.Date;
+import java.util.List;
 
 public class AnnouncementService {
-    private static final AnnouncementService announcementService = new AnnouncementService();
 
-    private AnnouncementService() {
-        // Private constructor to prevent instantiation
+    private final ContestDao contestDao;
+    private final AnnouncementDao announcementDao;
+    private final AnnounceWinnerDao announceWinnerDao;
+    private final ContestEntryDao contestEntryDao;
+
+    public AnnouncementService(ContestDao contestDao, AnnouncementDao announcementDao, AnnounceWinnerDao announceWinnerDao, ContestEntryDao contestEntryDao) {
+        this.contestDao = contestDao;
+        this.announcementDao = announcementDao;
+        this.announceWinnerDao = announceWinnerDao;
+        this.contestEntryDao = contestEntryDao;
     }
 
-    public static AnnouncementService getInstance() {
-        return announcementService;
+    public List<AnnouncementResponse> getAllAnnouncements() {
+        // Fetch all announcements from the database
+        return announcementDao.getAllAnnouncements().stream()
+                .map(this::mapAnnouncementToResponse)
+                .toList();
     }
 
-    private final ContestDAO contestDAO = ContestDAO.getInstance();
-    private final AnnouncementDAO announcementDAO = AnnouncementDAO.getInstance();
-    private final AnnounceWinnerDAO announceWinnerDAO = AnnounceWinnerDAO.getInstance();
+    public AnnouncementResponse getAnnouncementById(int announcementId) {
+        // Fetch the announcement by contest ID
+        Announcement announcement = announcementDao.getAnnouncementById(announcementId);
+        if (announcement == null) {
+            throw new NotFoundException("Announcement with ID " + announcementId + " does not exist.");
+        }
+        return mapAnnouncementToResponse(announcement);
+    }
 
-    public void addAnnouncement(AnnouncementRequest announcementRequest) throws Exception {
+    public void addAnnouncement(AnnouncementRequest announcementRequest) {
+
         // Validate the announcement request
         validateAnnouncementRequest(announcementRequest);
 
+        if (announcementDao.existsAnnouncementWithContest(announcementRequest.getContestId())) {
+            throw new ConflictException("Announcement already exists");
+        }
+
         // Insert the announcement into the database
-        announcementDAO.insertAnnouncement(mapRequestToAnnouncement(announcementRequest));
+        announcementDao.insertAnnouncement(mapRequestToAnnouncement(announcementRequest));
 
         // get the announcement ID
-        int announcementId = announcementDAO.getAnnouncementIdByContestId(announcementRequest.getContestId());
+        Integer announcementId = announcementDao
+                .getAnnouncementIdByContestId(announcementRequest.getContestId())
+                .orElseThrow(() -> new NotFoundException("Announcement not found for contest"));
 
         // Insert winners into the database
         for (AnnounceWinner winner : mapRequestToAnnouncement(announcementRequest).getWinners()) {
-            announceWinnerDAO.insertWinner(
+            announceWinnerDao.insertWinner(
                     new AnnounceWinner(
                             announcementId,
                             winner.getContestEntryId(),
@@ -44,6 +72,38 @@ public class AnnouncementService {
                     )
             );
         }
+    }
+
+    public void updateAnnouncement(AnnouncementRequest announcementRequest) {
+        // Validate the announcement request
+        validateAnnouncementRequest(announcementRequest);
+
+        if (!announcementDao.existsAnnouncementById(announcementRequest.getId())) {
+            throw new NotFoundException("Announcement with ID " + announcementRequest.getId() + " does not exist.");
+        }
+
+        // Update the announcement in the database
+        Announcement announcement = mapRequestToAnnouncement(announcementRequest);
+        announcementDao.updateAnnouncement(announcement);
+
+        // Update winners in the database
+        for (AnnounceWinner winner : announcement.getWinners()) {
+            if (announceWinnerDao.existsWinner(announcement.getId(), winner.getContestEntryId())) {
+                announceWinnerDao.updateWinner(winner);
+            } else {
+                announceWinnerDao.insertWinner(winner);
+            }
+        }
+    }
+
+    public void deleteAnnouncement(int announcementId) {
+        // Check if the announcement exists
+        if (!announcementDao.existsAnnouncementById(announcementId)) {
+            throw new NotFoundException("Announcement with ID " + announcementId + " does not exist.");
+        }
+
+        // Delete the announcement from the database
+        announcementDao.deleteAnnouncementById(announcementId);
     }
 
     private Announcement mapRequestToAnnouncement(AnnouncementRequest request) {
@@ -57,14 +117,30 @@ public class AnnouncementService {
         return announcement;
     }
 
-    private void validateAnnouncementRequest(AnnouncementRequest request) throws Exception {
-        if (!contestDAO.existsById(request.getContestId())) {
-            throw new Exception("Contest with ID " + request.getContestId() + " does not exist.");
-        }
+    private AnnouncementResponse mapAnnouncementToResponse(Announcement announcement) {
+        AnnouncementResponse response = new AnnouncementResponse();
+        response.setId(announcement.getId());
+        response.setTitle(announcement.getTitle());
+        response.setAnnouncementDate(announcement.getAnnouncementDate());
+        response.setDescription(announcement.getDescription());
+        response.setContest(contestDao.getContestById(announcement.getContestId()));
+        response.setWinners(
+                announceWinnerDao.getAllWinnersByAnnouncementIdAndEntryId(announcement.getId(), announcement.getContestId())
+                        .stream()
+                        .map(winner ->
+                                new AnnounceWinnerResponse(
+                                        winner.getId(),
+                                        contestEntryDao.getContestEntryById(winner.getContestEntryId()),
+                                        winner.getRanking()))
+                        .toList()
+        );
 
-        if (announcementDAO.existsAnnouncementWithContest(request.getContestId())) {
-            throw new Exception("An announcement already exists for contest ID " + request.getContestId() + ".");
-        }
+        return response;
     }
 
+    private void validateAnnouncementRequest(AnnouncementRequest request) {
+        if (!contestDao.existsById(request.getContestId())) {
+            throw new NotFoundException("Contest with ID " + request.getContestId() + " does not exist.");
+        }
+    }
 }
