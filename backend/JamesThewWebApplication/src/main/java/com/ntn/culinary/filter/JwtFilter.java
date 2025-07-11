@@ -2,6 +2,8 @@ package com.ntn.culinary.filter;
 
 import com.ntn.culinary.dao.UserDao;
 import com.ntn.culinary.dao.impl.UserDaoImpl;
+import com.ntn.culinary.exception.ForbiddenException;
+import com.ntn.culinary.exception.UnauthorizedException;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.JwtService;
 import com.ntn.culinary.service.UserService;
@@ -20,6 +22,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
 
@@ -36,20 +39,22 @@ public class JwtFilter implements Filter {
     }
 
     @Override
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException {
+    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) {
         HttpServletRequest request = (HttpServletRequest) req;
         HttpServletResponse response = (HttpServletResponse) res;
 
-        String authHeader = request.getHeader("Authorization");
-        if (authHeader == null || !authHeader.startsWith("Bearer ")) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Missing or invalid Authorization header"));
-            return;
-        }
-
-        String jwt = authHeader.substring(7);
         try {
+            // Kiểm tra phương thức HTTP
+            String authHeader = request.getHeader("Authorization");
+            if (authHeader == null || !authHeader.startsWith("Bearer ")) {
+                throw new UnauthorizedException("Authorization header is missing or invalid");
+            }
+
+            // Lấy JWT từ header
+            String jwt = authHeader.substring(7);
             Claims claims = jwtService.validateJwt(jwt);
 
+            // Lấy thông tin người dùng từ claims
             Integer userId = claims.get("user_id", Integer.class);
             String username = claims.getSubject();
 
@@ -81,8 +86,21 @@ public class JwtFilter implements Filter {
 
             // Kiểm tra role có đủ quyền truy cập không
             if (!jwtService.hasRequiredRole(request, roles)) {
-                ResponseUtils.sendResponse(response, new ApiResponse<>(403, "Insufficient role access"));
-                return;
+                throw new ForbiddenException("Access denied: insufficient role");
+            }
+
+            // Kiểm tra permission cho các API nhạy cảm
+            String uri = request.getRequestURI().substring(request.getContextPath().length());
+
+            // Duyệt qua các API nhạy cảm và kiểm tra permission
+            for (Map.Entry<String, String> entry : PERMISSION_MAP.entrySet()) {
+                if (uri.startsWith(entry.getKey())) {
+                    String requiredPermission = entry.getValue();
+                    if (!jwtService.hasPermission(request, claims, requiredPermission)) {
+                        throw new ForbiddenException("Access denied: " + requiredPermission + " permission required");
+                    }
+                    break;
+                }
             }
 
             // (Optional) Nếu muốn kiểm tra permission:
@@ -92,12 +110,24 @@ public class JwtFilter implements Filter {
             // }
 
             chain.doFilter(req, res);
+        } catch (UnauthorizedException e) {
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: " + e.getMessage()));
         } catch (ExpiredJwtException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Token expired"));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: token expired"));
         } catch (JwtException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Invalid token"));
+            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: invalid token"));
+        } catch (ForbiddenException e) {
+            ResponseUtils.sendResponse(response, new ApiResponse<>(403, e.getMessage()));
         } catch (Exception e) {
             ResponseUtils.sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
+
+    private static final Map<String, String> PERMISSION_MAP = Map.of(
+            "/api/protected/staff/secure-resource-2", "MANAGE_CONTESTS",
+            "/api/protected/staff/another-sensitive-api", "EDIT_USERS",
+            "/api/protected/staff/contest-entries","MANAGE_CONTEST_ENTRIES",
+            "/api/protected/staff/score-contest-entry-examiners", "SCORE_CONTEST_ENTRIES",
+            "/api/protected/staff/comments","MANAGE_COMMENTS"
+    );
 }

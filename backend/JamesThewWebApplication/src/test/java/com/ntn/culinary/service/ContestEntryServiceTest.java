@@ -16,14 +16,12 @@ import org.mockito.MockedStatic;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import javax.servlet.http.Part;
-
 import java.util.Collections;
 import java.util.List;
 
 import static com.ntn.culinary.fixture.TestDataFactory.createContestEntryRequest;
-import static com.ntn.culinary.utils.ImageUtils.saveImage;
-import static com.ntn.culinary.utils.ImageUtils.slugify;
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
@@ -84,7 +82,7 @@ class ContestEntryServiceTest {
     void addContestEntry_WhenValidRequestWithImage_ShouldInsertEntryAndInstructions() {
         // Arrange
         ContestEntryRequest request = createContestEntryRequest();
-        ContestEntryInstruction instr1 = new ContestEntryInstruction(1, 1, "Step 1", "Text 1", "img1.png");
+        ContestEntryInstruction instr1 = new ContestEntryInstruction(1, 1, 1, "Step 1", "Text 1", "img1.png");
         request.setContestEntryInstructions(List.of(instr1));
 
         when(userDao.existsById(request.getUserId())).thenReturn(true);

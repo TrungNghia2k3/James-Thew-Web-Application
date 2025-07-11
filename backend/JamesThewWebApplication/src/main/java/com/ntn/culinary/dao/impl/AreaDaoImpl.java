@@ -34,12 +34,26 @@ public class AreaDaoImpl implements AreaDao {
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(INSERT_AREA_QUERY)) {
-            stmt.setString(1, name.toUpperCase());
+            stmt.setString(1, name);
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error checking winner existence: " + e.getMessage(), e);
         }
 
+    }
+
+    @Override
+    public void updateArea(Area area) {
+        String UPDATE_AREA_QUERY = "UPDATE areas SET name = ? WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_AREA_QUERY)) {
+            stmt.setString(1, area.getName());
+            stmt.setInt(2, area.getId());
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error updating area: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -87,6 +101,55 @@ public class AreaDaoImpl implements AreaDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error checking winner existence: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public void deleteAreaById(int id) {
+        String DELETE_AREA_BY_ID_QUERY = "DELETE FROM areas WHERE id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(DELETE_AREA_BY_ID_QUERY)) {
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting area: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public boolean existsById(int id) {
+        String CHECK_AREA_EXISTS_BY_ID_QUERY = "SELECT 1 FROM areas WHERE id = ? LIMIT 1";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(CHECK_AREA_EXISTS_BY_ID_QUERY)) {
+            stmt.setInt(1, id);
+            return stmt.executeQuery().next();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking area existence by ID: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public Area getAreaByName(String name) {
+        String SELECT_AREA_BY_NAME_QUERY = "SELECT * FROM areas WHERE name = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_AREA_BY_NAME_QUERY)) {
+            stmt.setString(1, name.toUpperCase());
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    Area area = new Area();
+                    area.setId(rs.getInt("id"));
+                    area.setName(rs.getString("name"));
+                    return area;
+                } else {
+                    return null;
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error retrieving area by name: " + e.getMessage(), e);
         }
     }
 }

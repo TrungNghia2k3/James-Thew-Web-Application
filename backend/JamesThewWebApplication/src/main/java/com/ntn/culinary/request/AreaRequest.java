@@ -3,13 +3,23 @@ package com.ntn.culinary.request;
 import com.google.gson.annotations.Expose;
 
 public class AreaRequest {
-    @Expose
+    private int id;
     private String name;
 
-    public AreaRequest() {}
+    public AreaRequest() {
+    }
 
-    public AreaRequest(String name) {
+    public AreaRequest(int id, String name) {
+        this.id = id;
         this.name = name;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {

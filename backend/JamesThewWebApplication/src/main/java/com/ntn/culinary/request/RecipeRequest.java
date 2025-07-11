@@ -3,6 +3,7 @@ package com.ntn.culinary.request;
 import java.util.Date;
 
 public class RecipeRequest {
+    private int id;
     private String name;
     private String category;
     private String area;
@@ -21,8 +22,8 @@ public class RecipeRequest {
     }
 
     public RecipeRequest(String name, String category, String area, String instructions, String image,
-            String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime,
-            String yield, String shortDescription, String accessType) {
+                         String ingredients, Date publishedOn, int recipedBy, String prepareTime, String cookingTime,
+                         String yield, String shortDescription, String accessType) {
         this.name = name;
         this.category = category;
         this.area = area;
@@ -36,6 +37,14 @@ public class RecipeRequest {
         this.yield = yield;
         this.shortDescription = shortDescription;
         this.accessType = accessType;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public String getName() {
@@ -145,19 +154,19 @@ public class RecipeRequest {
     @Override
     public String toString() {
         return "RecipeRequest{" +
-                "name='" + name + '\'' +
-                ", category='" + category + '\'' +
-                ", area='" + area + '\'' +
-                ", instructions='" + instructions + '\'' +
-                ", image='" + image + '\'' +
-                ", ingredients='" + ingredients + '\'' +
-                ", publishedOn=" + publishedOn +
-                ", recipedBy=" + recipedBy +
-                ", prepareTime='" + prepareTime + '\'' +
-                ", cookingTime='" + cookingTime + '\'' +
-                ", yield='" + yield + '\'' +
-                ", shortDescription='" + shortDescription + '\'' +
-                ", accessType='" + accessType + '\'' +
-                '}';
+               "name='" + name + '\'' +
+               ", category='" + category + '\'' +
+               ", area='" + area + '\'' +
+               ", instructions='" + instructions + '\'' +
+               ", image='" + image + '\'' +
+               ", ingredients='" + ingredients + '\'' +
+               ", publishedOn=" + publishedOn +
+               ", recipedBy=" + recipedBy +
+               ", prepareTime='" + prepareTime + '\'' +
+               ", cookingTime='" + cookingTime + '\'' +
+               ", yield='" + yield + '\'' +
+               ", shortDescription='" + shortDescription + '\'' +
+               ", accessType='" + accessType + '\'' +
+               '}';
     }
 }

@@ -10,21 +10,27 @@ public class Contest {
     private String description;
     private Date datePublished;
     private Date dateModified;
-    private List<ContestImages> contestImages;
+    private String prize;
+    private boolean isFree;
+    private boolean isClosed;
     private String accessRole;
+    private List<ContestImages> contestImages;
 
     public Contest() {
     }
 
-    public Contest(int id, String articleBody, String headline, String description, Date datePublished, Date dateModified, List<ContestImages> contestImages, String accessRole) {
+    public Contest(int id, String articleBody, String headline, String description, Date datePublished, Date dateModified, String prize, boolean isFree, boolean isClosed, String accessRole, List<ContestImages> contestImages) {
         this.id = id;
         this.articleBody = articleBody;
         this.headline = headline;
         this.description = description;
         this.datePublished = datePublished;
         this.dateModified = dateModified;
-        this.contestImages = contestImages;
+        this.prize = prize;
+        this.isFree = isFree;
+        this.isClosed = isClosed;
         this.accessRole = accessRole;
+        this.contestImages = contestImages;
     }
 
     public int getId() {
@@ -91,18 +97,44 @@ public class Contest {
         this.accessRole = accessRole;
     }
 
+    public String getPrize() {
+        return prize;
+    }
+
+    public void setPrize(String prize) {
+        this.prize = prize;
+    }
+
+    public boolean isFree() {
+        return isFree;
+    }
+
+    public void setFree(boolean free) {
+        isFree = free;
+    }
+
+    public boolean isClosed() {
+        return isClosed;
+    }
+
+    public void setClosed(boolean closed) {
+        isClosed = closed;
+    }
 
     @Override
     public String toString() {
         return "Contest{" +
-                "id=" + id +
-                ", articleBody='" + articleBody + '\'' +
-                ", headline='" + headline + '\'' +
-                ", description='" + description + '\'' +
-                ", datePublished=" + datePublished + '\'' +
-                ", dateModified=" + dateModified + '\'' +
-                ", contestImages=" + contestImages + '\'' +
-                ", accessType='" + accessRole + '\'' +
-                '}';
+               "id=" + id +
+               ", articleBody='" + articleBody + '\'' +
+               ", headline='" + headline + '\'' +
+               ", description='" + description + '\'' +
+               ", datePublished=" + datePublished +
+               ", dateModified=" + dateModified +
+               ", prize='" + prize + '\'' +
+               ", isFree=" + isFree +
+               ", isClosed=" + isClosed +
+               ", accessRole='" + accessRole + '\'' +
+               ", contestImages=" + contestImages +
+               '}';
     }
 }

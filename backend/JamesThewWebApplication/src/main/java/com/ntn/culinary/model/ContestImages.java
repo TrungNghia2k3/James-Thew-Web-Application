@@ -8,6 +8,11 @@ public class ContestImages {
     public ContestImages() {
     }
 
+    public ContestImages(int contestId, String imagePath) {
+        this.contestId = contestId;
+        this.imagePath = imagePath;
+    }
+
     public ContestImages(int id, int contestId, String imagePath) {
         this.id = id;
         this.contestId = contestId;

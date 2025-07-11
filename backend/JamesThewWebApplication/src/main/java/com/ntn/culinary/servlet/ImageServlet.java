@@ -1,5 +1,7 @@
 package com.ntn.culinary.servlet;
 
+import com.ntn.culinary.exception.BadRequestException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.utils.ResponseUtils;
 
@@ -19,49 +21,49 @@ public class ImageServlet extends HttpServlet {
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        // Lấy phần path sau /api/images/
-        String pathInfo = req.getPathInfo(); // Ví dụ: /recipes/abc.jpg hoặc /avatars/def.png
+        try {
+            String pathInfo = req.getPathInfo(); // Ví dụ: /recipes/abc.jpg hoặc /avatars/def.png
 
-        if (pathInfo == null || pathInfo.equals("/")) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Path is required"));
-            return;
-        }
-
-        // Tách phần thư mục (recipes, avatars, ...) và tên file
-        String[] parts = pathInfo.split("/", 3); // [ "", "recipes", "abc.jpg" ]
-
-        if (parts.length < 3) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid path. Must include type and filename"));
-            return;
-        }
-
-        String type = parts[1]; // recipes hoặc avatars
-        String filename = parts[2]; // abc.jpg
-
-        // Xác định thư mục tương ứng
-        File imageFile = new File(BASE_PATH + type, filename);
-
-        if (!imageFile.exists()) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(404, "Image not found"));
-            return;
-        }
-
-        String mimeType = getServletContext().getMimeType(imageFile.getName());
-        if (mimeType == null) mimeType = "application/octet-stream";
-
-        resp.setContentType(mimeType);
-        resp.setContentLengthLong(imageFile.length());
-
-        try (FileInputStream in = new FileInputStream(imageFile);
-             OutputStream out = resp.getOutputStream()) {
-
-            byte[] buffer = new byte[4096];
-            int bytesRead;
-            while ((bytesRead = in.read(buffer)) != -1) {
-                out.write(buffer, 0, bytesRead);
+            if (pathInfo == null || pathInfo.equals("/")) {
+                throw new BadRequestException("Path is required");
             }
-        } catch (IOException ioe) {
-            throw new RuntimeException("IO exception", ioe);
+
+            String[] parts = pathInfo.split("/", 3); // [ "", "recipes", "abc.jpg" ]
+            if (parts.length < 3) {
+                throw new BadRequestException("Invalid path. Must include type and filename");
+            }
+
+            String type = parts[1];      // "recipes" hoặc "avatars"
+            String filename = parts[2];  // "abc.jpg"
+
+            File imageFile = new File(BASE_PATH + type, filename);
+
+            if (!imageFile.exists()) {
+                throw new NotFoundException("Image not found");
+            }
+
+            String mimeType = getServletContext().getMimeType(imageFile.getName());
+            if (mimeType == null) mimeType = "application/octet-stream";
+
+            resp.setContentType(mimeType);
+            resp.setContentLengthLong(imageFile.length());
+
+            try (FileInputStream in = new FileInputStream(imageFile);
+                 OutputStream out = resp.getOutputStream()) {
+
+                byte[] buffer = new byte[4096];
+                int bytesRead;
+                while ((bytesRead = in.read(buffer)) != -1) {
+                    out.write(buffer, 0, bytesRead);
+                }
+            }
+
+        } catch (BadRequestException e) {
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+        } catch (NotFoundException e) {
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (Exception e) {
+            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 }

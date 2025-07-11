@@ -2,6 +2,7 @@ package com.ntn.culinary.request;
 
 import com.google.gson.annotations.Expose;
 
+import javax.servlet.http.Part;
 import java.sql.Timestamp;
 import java.util.Date;
 
@@ -25,7 +26,7 @@ public class UserRequest {
     private String phone;
 
     @Expose
-    private String avatar;
+    private Part avatar;
 
     @Expose
     private String location;
@@ -96,11 +97,11 @@ public class UserRequest {
         this.phone = phone;
     }
 
-    public String getAvatar() {
+    public Part getAvatar() {
         return avatar;
     }
 
-    public void setAvatar(String avatar) {
+    public void setAvatar(Part avatar) {
         this.avatar = avatar;
     }
 

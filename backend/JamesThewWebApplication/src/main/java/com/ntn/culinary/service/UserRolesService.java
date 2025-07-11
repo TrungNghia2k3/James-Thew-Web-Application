@@ -34,6 +34,11 @@ public class UserRolesService {
         if (!roleDao.existsById(roleId)) {
             throw new NotFoundException("Role does not exist");
         }
+
+        if (!userRolesDao.existsUserRole(userId, roleId)) {
+            throw new NotFoundException("Role not assigned to user");
+        }
+
         userRolesDao.removeRoleFromUser(userId, roleId);
     }
 }

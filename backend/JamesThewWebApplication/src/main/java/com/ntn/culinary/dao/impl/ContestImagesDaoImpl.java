@@ -14,6 +14,7 @@ import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
 public class ContestImagesDaoImpl implements ContestImagesDao {
 
+    @Override
     public List<ContestImages> getContestImagesByContestId(int contestId) {
 
         String SELECT_CONTEST_BY_CONTEST_ID_QUERY = """
@@ -37,6 +38,55 @@ public class ContestImagesDaoImpl implements ContestImagesDao {
                 }
                 return images;
             }
+        } catch (SQLException ex) {
+            throw new RuntimeException("SQLException: " + ex.getMessage());
+        }
+    }
+
+    @Override
+    public void addContestImage(ContestImages contestImages) {
+        String INSERT_CONTEST_IMAGE_QUERY = """
+                INSERT INTO contest_images (contest_id, image_path)
+                VALUES (?, ?)
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(INSERT_CONTEST_IMAGE_QUERY)) {
+
+            stmt.setInt(1, contestImages.getContestId());
+            stmt.setString(2, contestImages.getImagePath());
+
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error adding contest image", e);
+        }
+    }
+
+    @Override
+    public void deleteContestImageById(int id) {
+        String DELETE_CONTEST_IMAGE_QUERY = """
+                DELETE FROM contest_images WHERE id = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(DELETE_CONTEST_IMAGE_QUERY)) {
+
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting contest image", e);
+        }
+    }
+
+    @Override
+    public boolean existsById(int id) {
+        String EXIST_BY_ID_QUERY = "SELECT 1 FROM contest_images WHERE id = ? LIMIT 1";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(EXIST_BY_ID_QUERY)) {
+
+            stmt.setInt(1, id);
+            return stmt.executeQuery().next();
         } catch (SQLException ex) {
             throw new RuntimeException("SQLException: " + ex.getMessage());
         }

@@ -5,7 +5,7 @@ import com.ntn.culinary.model.User;
 import java.util.List;
 
 public interface UserDao {
-    void updateUser(User user);
+    void updateUser(User user, String avatarPath);
 
     boolean existsById(int id);
 
@@ -14,8 +14,6 @@ public interface UserDao {
     User getUserById(int id);
 
     void addUser(User user);
-
-    void editGeneralUser(User user);
 
     void deleteUser(int id);
 
@@ -26,4 +24,12 @@ public interface UserDao {
     boolean isSubscriptionValid(int userId);
 
     boolean userExists(int id);
+
+    List<User> getUsersByRole(String role);
+
+    List<User> getUsersByPermission(String permission);
+
+    List<User> getUsersByUsername(String username);
+
+    List<User> getUsersByEmail(String email);
 }

@@ -6,4 +6,6 @@ public interface StaffPermissionsDao {
     void removePermissionFromStaff(int staffId, int permissionId);
 
     boolean existsStaffPermission(int staffId, int permissionId);
+
+    boolean existsPermissionId(int permissionId);
 }

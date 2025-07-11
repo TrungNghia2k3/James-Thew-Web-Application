@@ -37,11 +37,14 @@ public class AnnouncementService {
     }
 
     public AnnouncementResponse getAnnouncementById(int announcementId) {
-        // Fetch the announcement by contest ID
-        Announcement announcement = announcementDao.getAnnouncementById(announcementId);
-        if (announcement == null) {
+
+        // Check if the announcement exists
+        if (!announcementDao.existsAnnouncementById(announcementId)) {
             throw new NotFoundException("Announcement with ID " + announcementId + " does not exist.");
         }
+
+        // Fetch the announcement by contest ID
+        Announcement announcement = announcementDao.getAnnouncementById(announcementId);
         return mapAnnouncementToResponse(announcement);
     }
 
@@ -98,12 +101,30 @@ public class AnnouncementService {
 
     public void deleteAnnouncement(int announcementId) {
         // Check if the announcement exists
+        if (announcementDao.existsAnnouncementById(announcementId)) {
+
+            // Delete winners associated with the announcement
+            List<AnnounceWinner> winners = announceWinnerDao.getAllWinnersByAnnouncementId(announcementId);
+            if (!winners.isEmpty()) {
+                winners.forEach(winner -> announceWinnerDao.deleteWinner(announcementId, winner.getContestEntryId()));
+            }
+
+            // Delete the announcement from the database
+            announcementDao.deleteAnnouncementById(announcementId);
+        } else {
+            throw new NotFoundException("Announcement with ID " + announcementId + " does not exist.");
+        }
+    }
+
+    public void deleteWinnersByAnnouncementId(int announcementId) {
+        // Check if the announcement exists
         if (!announcementDao.existsAnnouncementById(announcementId)) {
             throw new NotFoundException("Announcement with ID " + announcementId + " does not exist.");
         }
 
-        // Delete the announcement from the database
-        announcementDao.deleteAnnouncementById(announcementId);
+        // Delete winners associated with the announcement
+        announceWinnerDao.getAllWinnersByAnnouncementId(announcementId)
+                .forEach(winner -> announceWinnerDao.deleteWinner(announcementId, winner.getContestEntryId()));
     }
 
     private Announcement mapRequestToAnnouncement(AnnouncementRequest request) {
@@ -125,7 +146,7 @@ public class AnnouncementService {
         response.setDescription(announcement.getDescription());
         response.setContest(contestDao.getContestById(announcement.getContestId()));
         response.setWinners(
-                announceWinnerDao.getAllWinnersByAnnouncementIdAndEntryId(announcement.getId(), announcement.getContestId())
+                announceWinnerDao.getAllWinnersByAnnouncementId(announcement.getId())
                         .stream()
                         .map(winner ->
                                 new AnnounceWinnerResponse(

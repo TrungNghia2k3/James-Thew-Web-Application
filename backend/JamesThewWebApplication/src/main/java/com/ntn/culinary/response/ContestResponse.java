@@ -14,11 +14,14 @@ public class ContestResponse {
     private Date dateModified;
     private String accessRole;
     private List<ContestImages> contestImages;
+    private String prize;
+    private boolean isFree;
+    private boolean isClosed;
 
     public ContestResponse() {
     }
 
-    public ContestResponse(int id, String articleBody, String headline, String description, Date datePublished, Date dateModified, List<ContestImages> contestImages, String accessRole) {
+    public ContestResponse(int id, String articleBody, String headline, String description, Date datePublished, Date dateModified, List<ContestImages> contestImages, String accessRole, String prize, boolean isFree, boolean isClosed) {
         this.id = id;
         this.articleBody = articleBody;
         this.headline = headline;
@@ -27,6 +30,9 @@ public class ContestResponse {
         this.dateModified = dateModified;
         this.contestImages = contestImages;
         this.accessRole = accessRole;
+        this.prize = prize;
+        this.isFree = isFree;
+        this.isClosed = isClosed;
     }
 
     public int getId() {
@@ -91,5 +97,29 @@ public class ContestResponse {
 
     public void setAccessRole(String accessRole) {
         this.accessRole = accessRole;
+    }
+
+    public String getPrize() {
+        return prize;
+    }
+
+    public void setPrize(String prize) {
+        this.prize = prize;
+    }
+
+    public boolean isFree() {
+        return isFree;
+    }
+
+    public void setFree(boolean free) {
+        isFree = free;
+    }
+
+    public boolean isClosed() {
+        return isClosed;
+    }
+
+    public void setClosed(boolean closed) {
+        isClosed = closed;
     }
 }

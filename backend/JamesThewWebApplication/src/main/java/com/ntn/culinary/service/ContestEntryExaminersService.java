@@ -4,10 +4,13 @@ import com.ntn.culinary.constant.ContestEntryStatusType;
 import com.ntn.culinary.dao.ContestEntryDao;
 import com.ntn.culinary.dao.ContestEntryExaminersDao;
 import com.ntn.culinary.dao.UserDao;
+import com.ntn.culinary.exception.ConflictException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.ContestEntryExaminers;
 import com.ntn.culinary.request.ContestEntryExaminersRequest;
 
 import java.sql.Timestamp;
+import java.util.List;
 
 public class
 ContestEntryExaminersService {
@@ -38,6 +41,53 @@ ContestEntryExaminersService {
         }
     }
 
+    public void updateExaminer(ContestEntryExaminersRequest request) {
+        try {
+            // Validate the request before proceeding
+            validateRequest(request);
+
+            if (contestEntryExaminersDao.existsById(request.getContestEntryId())) {
+                // Update the examiner's details
+                contestEntryExaminersDao.updateContestEntryExaminer(mapRequestToModel(request));
+
+                // Update the contest entry status to REVIEWED
+                contestEntryDao.updateContestEntryStatus(request.getContestEntryId(), String.valueOf(ContestEntryStatusType.REVIEWED));
+            }
+        } catch (Exception e) {
+            // Log the error or handle it as needed
+            throw new RuntimeException("Error updating examiner: " + e.getMessage(), e);
+        }
+    }
+
+    public void deleteExaminer(int contestEntryId, int examinerId) {
+        if (!contestEntryExaminersDao.existsByContestEntryIdAndExaminerId(contestEntryId, examinerId)) {
+            throw new NotFoundException("Examiner not found for the given contest entry");
+        }
+
+        contestEntryExaminersDao.deleteByContestEntryIdAndExaminerId(contestEntryId, examinerId);
+    }
+
+    public ContestEntryExaminers getContestEntryExaminerById(int id) {
+        if (!contestEntryExaminersDao.existsById(id)) {
+            throw new NotFoundException("Contest entry examiner does not exist");
+        }
+        return contestEntryExaminersDao.getContestEntryExaminerById(id);
+    }
+
+    public List<ContestEntryExaminers> getContestEntryExaminersByContestEntryId(int contestEntryId) {
+        if (!contestEntryDao.existsById(contestEntryId)) {
+            throw new NotFoundException("Contest entry does not exist");
+        }
+        return contestEntryExaminersDao.getContestEntryExaminersByContestEntryId(contestEntryId);
+    }
+
+    public List<ContestEntryExaminers> getContestEntryExaminersByExaminerId(int examinerId) {
+        if (!userDao.existsById(examinerId)) {
+            throw new NotFoundException("Examiner does not exist");
+        }
+        return contestEntryExaminersDao.getAllContestEntryExaminersByExaminerId(examinerId);
+    }
+
     private ContestEntryExaminers mapRequestToModel(ContestEntryExaminersRequest request) {
         ContestEntryExaminers examiner = new ContestEntryExaminers();
         examiner.setContestEntryId(request.getContestEntryId());
@@ -50,15 +100,15 @@ ContestEntryExaminersService {
 
     private void validateRequest(ContestEntryExaminersRequest request) {
         if (!contestEntryDao.existsById(request.getContestEntryId())) {
-            throw new RuntimeException("Contest entry does not exist");
+            throw new NotFoundException("Contest entry does not exist");
         }
 
         if (!userDao.existsById(request.getExaminerId())) {
-            throw new RuntimeException("Examiner does not exist");
+            throw new NotFoundException("Examiner does not exist");
         }
 
         if (contestEntryExaminersDao.existsByContestEntryIdAndExaminerId(request.getContestEntryId(), request.getExaminerId())) {
-            throw new RuntimeException("Examiner has already reviewed this contest entry");
+            throw new ConflictException("Examiner has already reviewed this contest entry");
         }
     }
 }

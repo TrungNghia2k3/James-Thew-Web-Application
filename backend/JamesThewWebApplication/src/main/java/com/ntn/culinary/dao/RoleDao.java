@@ -12,4 +12,12 @@ public interface RoleDao {
     List<Role> getAllRoles();
 
     Role getRoleById(int id);
+
+    void addRole(String name);
+
+    void updateRole(Role role);
+
+    void deleteRoleById(int id);
+
+    Role getRoleByName(String name);
 }

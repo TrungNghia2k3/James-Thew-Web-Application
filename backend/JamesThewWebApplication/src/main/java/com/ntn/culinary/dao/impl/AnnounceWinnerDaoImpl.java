@@ -46,32 +46,6 @@ public class AnnounceWinnerDaoImpl implements AnnounceWinnerDao {
     }
 
     @Override
-    public List<AnnounceWinner> getAllWinnersByAnnouncementIdAndEntryId(int announcementId, int contestEntryId) {
-
-        String SELECT_ALL_WINNER_BY_ANNOUNCEMENT_ID_AND_ENTRY_ID_QUERY = "SELECT * FROM announce_winners WHERE announcement_id = ? AND contest_entry_id = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_WINNER_BY_ANNOUNCEMENT_ID_AND_ENTRY_ID_QUERY)) {
-            stmt.setInt(1, announcementId);
-            stmt.setInt(2, contestEntryId);
-
-            List<AnnounceWinner> winners = new ArrayList<>();
-            try (ResultSet rs = stmt.executeQuery()) {
-                while (rs.next()) {
-                    AnnounceWinner winner = new AnnounceWinner();
-                    winner.setAnnouncementId(rs.getInt("announcement_id"));
-                    winner.setContestEntryId(rs.getInt("contest_entry_id"));
-                    winner.setRanking(rs.getString("ranking"));
-                    winners.add(winner);
-                }
-                return winners;
-            }
-        } catch (SQLException e) {
-            throw new RuntimeException("Error retrieving winners: " + e.getMessage(), e);
-        }
-    }
-
-    @Override
     public void updateWinner(AnnounceWinner announceWinner) {
 
         String UPDATE_WINNER_QUERY_BY_ID_QUERY = "UPDATE announce_winners SET ranking = ?, contest_entry_id = ? WHERE id = ? AND announcement_id = ?";
@@ -100,6 +74,31 @@ public class AnnounceWinnerDaoImpl implements AnnounceWinnerDao {
             stmt.executeUpdate();
         } catch (SQLException e) {
             throw new RuntimeException("Error deleting winner: " + e.getMessage(), e);
+        }
+    }
+
+    @Override
+    public List<AnnounceWinner> getAllWinnersByAnnouncementId(int announcementId) {
+
+        String SELECT_ALL_WINNERS_BY_ANNOUNCEMENT_ID_QUERY = "SELECT * FROM announce_winners WHERE announcement_id = ?";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_WINNERS_BY_ANNOUNCEMENT_ID_QUERY)) {
+            stmt.setInt(1, announcementId);
+
+            List<AnnounceWinner> winners = new ArrayList<>();
+            try (ResultSet rs = stmt.executeQuery()) {
+                while (rs.next()) {
+                    AnnounceWinner winner = new AnnounceWinner();
+                    winner.setAnnouncementId(rs.getInt("announcement_id"));
+                    winner.setContestEntryId(rs.getInt("contest_entry_id"));
+                    winner.setRanking(rs.getString("ranking"));
+                    winners.add(winner);
+                }
+                return winners;
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error retrieving winners by announcement ID: " + e.getMessage(), e);
         }
     }
 }

@@ -10,4 +10,18 @@ public interface ContestDao {
     Contest getContestById(int id);
 
     boolean existsById(int id);
+
+    void addContest(Contest contest);
+
+    void updateContest(Contest contest);
+
+    void updateContestStatus(int id, boolean isClosed);
+
+    void deleteContestById(int id);
+
+    int getContestIdByHeadline(String headline);
+
+    boolean existsByHeadline(String headline);
+
+    boolean isContestClosed(int id);
 }

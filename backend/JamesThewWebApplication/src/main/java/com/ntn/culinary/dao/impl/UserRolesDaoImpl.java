@@ -9,6 +9,7 @@ import java.sql.SQLException;
 import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
 public class UserRolesDaoImpl implements UserRolesDao {
+    @Override
     public void assignRoleToUser(int userId, int roleId) {
         String INSERT_USER_ROLE_QUERY = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
 
@@ -44,6 +45,7 @@ public class UserRolesDaoImpl implements UserRolesDao {
         }
     }
 
+    @Override
     public void removeRoleFromUser(int userId, int roleId) {
         String DELETE_USER_ROLE_QUERY = "DELETE FROM user_roles WHERE user_id = ? AND role_id = ?";
 
@@ -58,6 +60,7 @@ public class UserRolesDaoImpl implements UserRolesDao {
         }
     }
 
+    @Override
     public boolean existsUserRole(int userId, int roleId) {
         String CHECK_USER_ROLE_EXISTS_QUERY = "SELECT 1 FROM user_roles WHERE user_id = ? AND role_id = ? LIMIT 1";
 
@@ -68,6 +71,19 @@ public class UserRolesDaoImpl implements UserRolesDao {
             return stmt.executeQuery().next();
         } catch (SQLException e) {
             throw new RuntimeException("Error checking user role", e);
+        }
+    }
+
+    @Override
+    public boolean existsRoleId(int roleId) {
+        String CHECK_ROLE_ID_EXISTS_QUERY = "SELECT 1 FROM roles WHERE id = ? LIMIT 1";
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(CHECK_ROLE_ID_EXISTS_QUERY)) {
+            stmt.setInt(1, roleId);
+            return stmt.executeQuery().next();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error checking role ID exists", e);
         }
     }
 }

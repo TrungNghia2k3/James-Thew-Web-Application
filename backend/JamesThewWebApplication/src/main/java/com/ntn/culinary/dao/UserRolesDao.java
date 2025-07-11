@@ -6,4 +6,6 @@ public interface UserRolesDao {
     void removeRoleFromUser(int userId, int roleId);
 
     boolean existsUserRole(int userId, int roleId);
+
+    boolean existsRoleId(int roleId);
 }

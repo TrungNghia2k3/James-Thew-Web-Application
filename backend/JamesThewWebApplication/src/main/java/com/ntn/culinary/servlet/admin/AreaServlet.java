@@ -1,9 +1,14 @@
 package com.ntn.culinary.servlet.admin;
 
+import com.google.gson.JsonSyntaxException;
 import com.ntn.culinary.dao.AreaDao;
 import com.ntn.culinary.dao.impl.AreaDaoImpl;
+import com.ntn.culinary.exception.ConflictException;
+import com.ntn.culinary.exception.ForbiddenException;
+import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.request.AreaRequest;
 import com.ntn.culinary.response.ApiResponse;
+import com.ntn.culinary.response.AreaResponse;
 import com.ntn.culinary.service.AreaService;
 import com.ntn.culinary.utils.GsonUtils;
 import com.ntn.culinary.utils.ValidationUtils;
@@ -18,6 +23,7 @@ import java.sql.SQLException;
 import java.util.List;
 
 import static com.ntn.culinary.utils.CastUtils.toStringList;
+import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/protected/admin/areas")
@@ -41,26 +47,33 @@ public class AreaServlet extends HttpServlet {
     //Tomcat KHÔNG biết làm sao để cung cấp AreaService vào tham số constructor.
     //Servlet container chỉ hỗ trợ constructor mặc định không tham số khi tự động khởi tạo servlet.
     //Nó không tự inject dependency qua constructor như Spring.
-
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
-        // Lấy thông tin từ JwtFilter
-        List<String> roles = toStringList(req.getAttribute("roles"));
-
-        if (roles == null || !roles.contains("ADMIN")) {
-            sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
-            return;
-        }
-
-        // Lấy thông tin từ JwtFilter
-        String idParam = req.getParameter("id");
-
         try {
+            // Lấy thông tin từ request
+            String idParam = req.getParameter("id");
+            String nameParam = req.getParameter("name");
+
             if (idParam != null) {
-                handleGetById(idParam, resp);
-            } else {
-                handleGetAll(resp);
+                int id = Integer.parseInt(idParam);
+                AreaResponse area = areaService.getAreaById(id);
+                sendResponse(resp, new ApiResponse<>(200, "Area fetched successfully", area));
+            } else if (nameParam != null) {
+                // Lấy danh sách các khu vực theo tên
+                AreaResponse area = areaService.getAreaByName(nameParam);
+                if (area == null) {
+                    sendResponse(resp, new ApiResponse<>(404, "Area not found"));
+                } else {
+                    sendResponse(resp, new ApiResponse<>(200, "Area fetched successfully", area));
+                }
             }
+
+            List<AreaResponse> areas = areaService.getAllAreas();
+            sendResponse(resp, new ApiResponse<>(200, "All areas fetched successfully", areas));
+        } catch (NumberFormatException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+        }catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
         } catch (Exception e) {
             sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
@@ -68,65 +81,84 @@ public class AreaServlet extends HttpServlet {
 
     @Override
     protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-
-        // Lấy thông tin từ JwtFilter
-        List<String> roles = toStringList(req.getAttribute("roles"));
-
-        if (roles == null || !roles.contains("ADMIN")) {
-            sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
-            return;
-        }
-
-        // Read JSON payload
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = req.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-        } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
-            return;
-        }
-
-        // Parse JSON
-        AreaRequest areaRequest = GsonUtils.fromJson(sb.toString(), AreaRequest.class);
-
-        // Validate input
-        if (ValidationUtils.isNullOrEmpty(areaRequest.getName())) {
-            sendResponse(resp, new ApiResponse<>(400, "Area name is required"));
-            return;
-        }
-
         try {
+            // Read JSON payload
+            String json = readRequestBody(req);
+
+            // Parse JSON
+            AreaRequest areaRequest = GsonUtils.fromJson(json, AreaRequest.class);
+
+            // Validate input
+            if (ValidationUtils.isNullOrEmpty(areaRequest.getName())) {
+                throw new IllegalArgumentException("Area name cannot be null or empty");
+            }
+
             areaService.addArea(areaRequest.getName());
             sendResponse(resp, new ApiResponse<>(200, "Area added successfully"));
+        } catch (JsonSyntaxException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+        } catch (IllegalArgumentException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request: " + e.getMessage()));
+        } catch (IOException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+        } catch (ConflictException e) {
+            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
         } catch (Exception e) {
             sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
-    private void handleGetById(String idParam, HttpServletResponse resp) {
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            int id = Integer.parseInt(idParam);
-            var area = areaService.getAreaById(id);
+            // Read JSON payload
+            String json = readRequestBody(req);
 
-            if (area != null) {
-                sendResponse(resp, new ApiResponse<>(200, "Area fetched successfully", area));
-            } else {
-                sendResponse(resp, new ApiResponse<>(404, "Area with ID " + id + " does not exist"));
+            // Parse JSON
+            AreaRequest areaRequest = GsonUtils.fromJson(json, AreaRequest.class);
+
+            // Validate input
+            if (areaRequest.getId() <= 0 || ValidationUtils.isNullOrEmpty(areaRequest.getName())) {
+                throw new IllegalArgumentException("Invalid area ID or name");
             }
-        } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+
+            areaService.updateArea(areaRequest);
+            sendResponse(resp, new ApiResponse<>(200, "Area updated successfully"));
+        } catch (JsonSyntaxException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+        } catch (IllegalArgumentException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request: " + e.getMessage()));
+        } catch (IOException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (ConflictException e) {
+            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+        } catch (Exception e) {
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
-    private void handleGetAll(HttpServletResponse resp){
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            var areas = areaService.getAllAreas();
-            sendResponse(resp, new ApiResponse<>(200, "All areas fetched", areas));
-        } catch (RuntimeException e) {
-            sendResponse(resp, new ApiResponse<>(500, "Database error: " + e.getMessage()));
+            // Get area ID from request parameters
+            String idParam = req.getParameter("id");
+            if (idParam == null || idParam.isEmpty()) {
+                throw new IllegalArgumentException("Area ID is required");
+            }
+
+            int id = Integer.parseInt(idParam);
+            areaService.deleteAreaById(id);
+            sendResponse(resp, new ApiResponse<>(200, "Area deleted successfully"));
+        } catch (NumberFormatException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid area ID format"));
+        } catch (IllegalArgumentException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request: " + e.getMessage()));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (Exception e) {
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 }

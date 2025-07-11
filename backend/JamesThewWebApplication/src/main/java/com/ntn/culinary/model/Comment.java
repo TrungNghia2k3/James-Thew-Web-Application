@@ -9,17 +9,19 @@ public class Comment {
     private String content;
     private Timestamp date;
     private int rating;
+    private boolean isBanned;
 
     public Comment() {
     }
 
-    public Comment(int id, int userId, int recipeId, String content, Timestamp date, int rating) {
+    public Comment(int id, int userId, int recipeId, String content, Timestamp date, int rating, boolean isBanned) {
         this.id = id;
         this.userId = userId;
         this.recipeId = recipeId;
         this.content = content;
         this.date = date;
         this.rating = rating;
+        this.isBanned = isBanned;
     }
 
     public int getId() {
@@ -70,15 +72,24 @@ public class Comment {
         this.rating = rating;
     }
 
+    public boolean isBanned() {
+        return isBanned;
+    }
+
+    public void setBanned(boolean banned) {
+        isBanned = banned;
+    }
+
     @Override
     public String toString() {
         return "Comment{" +
-                "id=" + id +
-                ", userId=" + userId +
-                ", recipeId=" + recipeId +
-                ", content='" + content + '\'' +
-                ", date=" + date +
-                ", rating=" + rating +
-                '}';
+               "id=" + id +
+               ", userId=" + userId +
+               ", recipeId=" + recipeId +
+               ", content='" + content + '\'' +
+               ", date=" + date +
+               ", rating=" + rating +
+               ", isBanned=" + isBanned +
+               '}';
     }
 }

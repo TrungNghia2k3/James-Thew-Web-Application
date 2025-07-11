@@ -31,9 +31,15 @@ public class StaffPermissionsService {
         if (!userDao.existsById(userId)) {
             throw new NotFoundException("User does not exist");
         }
+
         if (!roleDao.existsById(roleId)) {
             throw new NotFoundException("Role does not exist");
         }
+
+        if (!staffPermissionsDao.existsStaffPermission(userId, roleId)) {
+            throw new NotFoundException("Permission not assigned to user");
+        }
+
         staffPermissionsDao.removePermissionFromStaff(userId, roleId);
     }
 }

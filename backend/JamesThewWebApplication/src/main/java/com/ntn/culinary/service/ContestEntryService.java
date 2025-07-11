@@ -6,10 +6,13 @@ import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.ContestEntry;
 import com.ntn.culinary.model.ContestEntryInstruction;
 import com.ntn.culinary.request.ContestEntryRequest;
+import com.ntn.culinary.request.DeleteContestEntryRequest;
+import com.ntn.culinary.response.ContestEntryResponse;
 import com.ntn.culinary.utils.ImageUtils;
 
 import javax.servlet.http.Part;
 import java.sql.Date;
+import java.util.List;
 
 import static com.ntn.culinary.utils.ImageUtils.saveImage;
 import static com.ntn.culinary.utils.ImageUtils.slugify;
@@ -56,6 +59,7 @@ public class ContestEntryService {
 
             contestEntryInstructionsDao.addContestEntryInstructions(
                     new ContestEntryInstruction(
+                            instructions.getId(),
                             contestEntryId,
                             instructions.getStepNumber(),
                             instructions.getName(),
@@ -64,6 +68,85 @@ public class ContestEntryService {
                     )
             );
         }
+    }
+
+    public void updateContestEntry(ContestEntryRequest contestEntryRequest, Part imagePart) {
+        if (!contestEntryDao.existsById(contestEntryRequest.getContestId())) {
+            throw new NotFoundException("Contest entry with the specified ID does not exist.");
+        }
+
+        // Validate the contest entry request
+        validateContestEntryRequest(contestEntryRequest);
+
+        if (imagePart != null && imagePart.getSize() > 0) {
+            String slug = slugify(contestEntryRequest.getName());
+            String fileName = saveImage(imagePart, slug, "contest_entries");
+            contestEntryRequest.setImage(fileName);
+        }
+
+        // Map the request to a ContestEntry model
+        ContestEntry contestEntry = mapRequestToContestEntry(contestEntryRequest);
+
+        // Update the contest entry
+        contestEntryDao.updateContestEntry(contestEntry);
+
+        // Update instructions
+        for (ContestEntryInstruction instruction : contestEntry.getContestEntryInstructions()) {
+            if (instruction.getId() == 0) {
+                contestEntryInstructionsDao.addContestEntryInstructions(instruction);
+            } else {
+                contestEntryInstructionsDao.updateContestEntryInstructions(instruction);
+            }
+        }
+    }
+
+    public void deleteContestEntry(DeleteContestEntryRequest request) {
+        if (!contestEntryDao.existsByUserIdAndContestIdAndName(request.getUserId(), request.getContestId(), request.getName())) {
+            throw new NotFoundException("Contest entry with the specified user ID, contest ID, and name does not exist.");
+        }
+
+        // Delete contest entry instructions
+        List<ContestEntryInstruction> instructions = contestEntryInstructionsDao.getContestEntryInstructionsByContestEntryId(request.getContestId());
+        for (ContestEntryInstruction instruction : instructions) {
+            if (contestEntryInstructionsDao.existsByContestEntryIdAndInstructionId(instruction.getContestEntryId(), instruction.getId())) {
+                contestEntryInstructionsDao.deleteContestEntryInstructionsByContestEntryIdAndInstructionId(instruction.getContestEntryId(), instruction.getId());
+            }
+        }
+
+        // Delete the contest entry
+        contestEntryDao.deleteContestEntryByUserIdAndContestIdAndName(request.getUserId(), request.getContestId(), request.getName());
+    }
+
+    public ContestEntryResponse getContestEntryByUserIdAndContestId(int userId, int contestId) {
+        ContestEntry contestEntry = contestEntryDao.getContestEntryByUserIdAndContestId(userId, contestId);
+        if (contestEntry == null) {
+            throw new NotFoundException("Contest entry not found for the specified user ID and contest ID.");
+        }
+        return mapContestEntryToResponse(contestEntry);
+    }
+
+    public ContestEntryResponse getContestEntryById(int id) {
+        ContestEntry contestEntry = contestEntryDao.getContestEntryById(id);
+        if (contestEntry == null) {
+            throw new NotFoundException("Contest entry with the specified ID does not exist.");
+        }
+        return mapContestEntryToResponse(contestEntry);
+    }
+
+    public List<ContestEntryResponse> getContestEntriesByContestId(int contestId) {
+        List<ContestEntry> contestEntries = contestEntryDao.getContestEntryByContestId(contestId);
+        if (contestEntries.isEmpty()) {
+            throw new NotFoundException("No contest entries found for the specified contest ID.");
+        }
+        return contestEntries.stream().map(this::mapContestEntryToResponse).toList();
+    }
+
+    public List<ContestEntryResponse> getContestEntriesByUserId(int userId) {
+        List<ContestEntry> contestEntries = contestEntryDao.getContestEntriesByUserId(userId);
+        if (contestEntries.isEmpty()) {
+            throw new NotFoundException("No contest entries found for the specified user ID.");
+        }
+        return contestEntries.stream().map(this::mapContestEntryToResponse).toList();
     }
 
     private void validateContestEntryRequest(ContestEntryRequest request) {
@@ -86,6 +169,10 @@ public class ContestEntryService {
 
         if (contestEntryDao.existsByUserIdAndContestIdAndName(request.getUserId(), request.getContestId(), request.getName()))
             throw new ConflictException("Contest entry with the same name already exists for this user and contest.");
+
+        if (contestDao.isContestClosed(request.getContestId())) {
+            throw new ConflictException("Cannot update contest entry as the contest is closed.");
+        }
     }
 
     private ContestEntry mapRequestToContestEntry(ContestEntryRequest request) {
@@ -108,5 +195,28 @@ public class ContestEntryService {
         contestEntry.setContestEntryInstructions(request.getContestEntryInstructions());
 
         return contestEntry;
+    }
+
+    private ContestEntryResponse mapContestEntryToResponse(ContestEntry contestEntry) {
+        ContestEntryResponse response = new ContestEntryResponse();
+        response.setId(contestEntry.getId());
+        response.setContestId(contestEntry.getContestId());
+        response.setUserId(contestEntry.getUserId());
+        response.setName(contestEntry.getName());
+        response.setIngredients(contestEntry.getIngredients());
+        response.setInstructions(contestEntry.getInstructions());
+        response.setImage(contestEntry.getImage());
+        response.setPrepareTime(contestEntry.getPrepareTime());
+        response.setCookingTime(contestEntry.getCookingTime());
+        response.setYield(contestEntry.getYield());
+        response.setCategory(contestEntry.getCategory());
+        response.setArea(contestEntry.getArea());
+        response.setShortDescription(contestEntry.getShortDescription());
+        response.setDateCreated(contestEntry.getDateCreated());
+        response.setDateModified(contestEntry.getDateModified());
+        response.setStatus(contestEntry.getStatus());
+        response.setContestEntryInstructions(contestEntryInstructionsDao.getContestEntryInstructionsByContestEntryId(contestEntry.getId()));
+
+        return response;
     }
 }

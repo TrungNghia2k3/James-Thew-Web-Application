@@ -26,7 +26,7 @@ public class AuthService {
         User user = userDao.findUserByUsername(username);
 
         if (user == null) {
-            throw new NotFoundException("User not found");
+            throw new NotFoundException("Invalid username");
         }
 
         if (!user.isActive()) {

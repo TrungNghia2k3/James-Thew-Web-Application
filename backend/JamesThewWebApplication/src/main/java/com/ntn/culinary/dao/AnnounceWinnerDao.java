@@ -10,9 +10,9 @@ public interface AnnounceWinnerDao {
 
     boolean existsWinner(int announcementId, int contestEntryId);
 
-    List<AnnounceWinner> getAllWinnersByAnnouncementIdAndEntryId(int announcementId, int contestEntryId);
-
     void updateWinner(AnnounceWinner announceWinner);
 
     void deleteWinner(int announcementId, int contestEntryId);
+
+    List<AnnounceWinner> getAllWinnersByAnnouncementId(int announcementId);
 }

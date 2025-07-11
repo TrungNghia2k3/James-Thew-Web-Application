@@ -1,5 +1,6 @@
 package com.ntn.culinary.servlet.admin;
 
+import com.google.gson.JsonSyntaxException;
 import com.ntn.culinary.dao.AnnounceWinnerDao;
 import com.ntn.culinary.dao.AnnouncementDao;
 import com.ntn.culinary.dao.ContestDao;
@@ -8,25 +9,28 @@ import com.ntn.culinary.dao.impl.AnnounceWinnerDaoImpl;
 import com.ntn.culinary.dao.impl.AnnouncementDaoImpl;
 import com.ntn.culinary.dao.impl.ContestDaoImpl;
 import com.ntn.culinary.dao.impl.ContestEntryDaoImpl;
-import com.ntn.culinary.model.AnnounceWinner;
+import com.ntn.culinary.exception.ConflictException;
+import com.ntn.culinary.exception.ForbiddenException;
+import com.ntn.culinary.exception.NotFoundException;
+import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.AnnouncementRequest;
+import com.ntn.culinary.response.AnnouncementResponse;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.AnnouncementService;
-import com.ntn.culinary.utils.CastUtils;
-import com.ntn.culinary.utils.GsonUtils;
-import com.ntn.culinary.utils.ResponseUtils;
-import com.ntn.culinary.utils.ValidationUtils;
+import com.ntn.culinary.validator.AnnouncementRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.rmi.ServerException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
+import static com.ntn.culinary.utils.CastUtils.toStringList;
+import static com.ntn.culinary.utils.GsonUtils.fromJson;
+import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
+import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/protected/admin/announcements")
 public class AnnouncementServlet extends HttpServlet {
@@ -45,79 +49,122 @@ public class AnnouncementServlet extends HttpServlet {
     // Xem thông tin thông báo, có thể lọc theo ID, có thể lấy tất cả thông báo, chỉnh sửa thông báo, xóa thông báo
 
     @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-
-        // Lấy thông tin từ JwtFilter
-        List<String> roles = CastUtils.toStringList(req.getAttribute("roles"));
-
-        if (roles == null || !roles.contains("ADMIN")) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(403, "Access denied: ADMIN role required"));
-            return;
-        }
-
-        // Read JSON payload
-        StringBuilder sb = new StringBuilder();
-        try (BufferedReader reader = req.getReader()) {
-            String line;
-            while ((line = reader.readLine()) != null) {
-                sb.append(line);
-            }
-        } catch (IOException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
-            return;
-        }
-
-        // Parse JSON
-        AnnouncementRequest announcementRequest = GsonUtils.fromJson(sb.toString(), AnnouncementRequest.class);
-
-        // Validate input
-        Map<String, String> errors = validateAnnouncementRequest(announcementRequest);
-
-        if (!errors.isEmpty()) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, "Validation errors", errors));
-            return;
-        }
-
+    protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            announcementService.addAnnouncement(announcementRequest);
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(200, "Announcement created successfully"));
+            // Get announcement ID from request parameters
+            String idParam = req.getParameter("id");
+            if (idParam != null && !idParam.isEmpty()) {
+                int announcementId = Integer.parseInt(idParam);
+                AnnouncementResponse announcement = announcementService.getAnnouncementById(announcementId);
+                sendResponse(resp, new ApiResponse<>(200, "Announcement found", announcement));
+            }
 
+            List<AnnouncementResponse> announcements = announcementService.getAllAnnouncements();
+            if (announcements.isEmpty()) {
+                sendResponse(resp, new ApiResponse<>(404, "No announcements found"));
+            } else {
+                sendResponse(resp, new ApiResponse<>(200, "Announcements fetched successfully", announcements));
+            }
+        } catch (NumberFormatException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid announcement ID format"));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
         }
     }
 
-    private Map<String, String> validateAnnouncementRequest(AnnouncementRequest request) {
-        Map<String, String> errors = new HashMap<>();
+    @Override
+    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
+        try {
+            // Read JSON payload
+            String json = readRequestBody(req);
 
-        if (ValidationUtils.isNullOrEmpty(request.getTitle())) {
-            errors.put("title", "Title is required");
-        }
+            // Parse JSON
+            AnnouncementRequest announcementRequest = fromJson(json, AnnouncementRequest.class);
 
-        if (ValidationUtils.isNullOrEmpty(request.getDescription())) {
-            errors.put("description", "Description is required");
-        }
-
-        if (ValidationUtils.isNotExistId(request.getContestId())) {
-            errors.put("contestId", "Contest ID is required and must exist");
-        }
-
-        if (request.getWinners() == null || request.getWinners().isEmpty()) {
-            errors.put("winners", "Winners are required");
-        } else {
-            for (int i = 0; i < request.getWinners().size(); i++) {
-                AnnounceWinner announceWinner = request.getWinners().get(i);
-
-                if (ValidationUtils.isNotExistId(announceWinner.getContestEntryId())) {
-                    errors.put("winners[" + i + "].contestEntryId", "Contest Entry ID is required for winner " + (i + 1));
-                }
-
-                if (ValidationUtils.isNullOrEmpty(announceWinner.getRanking())) {
-                    errors.put("winners[" + i + "].ranking", "Ranking is required for winner " + (i + 1));
-                }
+            // Validate input
+            AnnouncementRequestValidator validator = new AnnouncementRequestValidator();
+            Map<String, String> errors = validator.validate(announcementRequest);
+            if (!errors.isEmpty()) {
+                throw new ValidationException("Validation failed", errors);
             }
-        }
 
-        return errors;
+            announcementService.addAnnouncement(announcementRequest);
+            sendResponse(resp, new ApiResponse<>(200, "Announcement created successfully"));
+        } catch (JsonSyntaxException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+        } catch (IOException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (ConflictException e) {
+            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+        } catch (ValidationException e) {
+            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+        } catch (Exception e) {
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
+        try {
+            // Read JSON payload
+            String json = readRequestBody(req);
+
+            // Parse JSON
+            AnnouncementRequest announcementRequest = fromJson(json, AnnouncementRequest.class);
+
+            // Validate input
+            AnnouncementRequestValidator validator = new AnnouncementRequestValidator();
+            Map<String, String> errors = validator.validate(announcementRequest);
+            if (!errors.isEmpty()) {
+                throw new ValidationException("Validation failed", errors);
+            }
+
+            // Update the announcement
+            announcementService.updateAnnouncement(announcementRequest);
+            sendResponse(resp, new ApiResponse<>(200, "Announcement updated successfully"));
+        } catch (JsonSyntaxException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+        } catch (IOException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (ConflictException e) {
+            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+        } catch (ValidationException e) {
+            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+        } catch (ForbiddenException e) {
+            sendResponse(resp, new ApiResponse<>(403, e.getMessage()));
+        } catch (Exception e) {
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+        }
+    }
+
+    @Override
+    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
+        try {
+            // Get announcement ID from request parameters
+            String idParam = req.getParameter("id");
+            if (idParam == null || idParam.isEmpty()) {
+                throw new IllegalArgumentException("Announcement ID is required");
+            }
+
+            int announcementId = Integer.parseInt(idParam);
+
+            // Delete the announcement
+            announcementService.deleteAnnouncement(announcementId);
+            sendResponse(resp, new ApiResponse<>(200, "Announcement deleted successfully"));
+        } catch (IllegalArgumentException e) {
+            sendResponse(resp, new ApiResponse<>(400, "Invalid request: " + e.getMessage()));
+        } catch (NotFoundException e) {
+            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+        } catch (ForbiddenException e) {
+            sendResponse(resp, new ApiResponse<>(403, e.getMessage()));
+        } catch (Exception e) {
+            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+        }
     }
 }

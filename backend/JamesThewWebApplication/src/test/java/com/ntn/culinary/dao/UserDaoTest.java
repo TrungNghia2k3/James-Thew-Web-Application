@@ -1,6 +1,8 @@
 package com.ntn.culinary.dao;
 
 import com.ntn.culinary.dao.impl.UserDaoImpl;
+import com.ntn.culinary.model.Permission;
+import com.ntn.culinary.model.Role;
 import com.ntn.culinary.model.User;
 import org.junit.jupiter.api.*;
 
@@ -17,66 +19,147 @@ class UserDaoTest {
 
     @BeforeAll
     static void setupDatabase() {
-        // Set flag để DatabaseUtils load H2
         System.setProperty("TEST_ENV", "true");
 
-        // Tạo schema
-        try (Connection conn = getConnection();
-             Statement stmt = conn.createStatement()) {
-            stmt.execute("""
-                        CREATE TABLE users (
-                            id INT AUTO_INCREMENT PRIMARY KEY,
-                            username VARCHAR(100),
-                            password VARCHAR(100),
-                            email VARCHAR(100),
-                            phone VARCHAR(100),
-                            created_at TIMESTAMP,
-                            is_active TINYINT,
-                            first_name VARCHAR(100),
-                            last_name VARCHAR(100),
-                            avatar VARCHAR(100),
-                            location VARCHAR(100),
-                            school VARCHAR(100),
-                            highlights TEXT,
-                            experience TEXT,
-                            education TEXT,
-                            social_links VARCHAR(100)
-                        )
-                    """);
-        } catch (SQLException throwables) {
-            throwables.printStackTrace();
-        }
-
-        // Insert 3 user mẫu
-        try (Connection conn = getConnection();
-             PreparedStatement ps = conn.prepareStatement("""
-                         INSERT INTO users (
-                             username, password, email, phone, created_at, is_active,
-                             first_name, last_name, avatar, location, school,
-                             highlights, experience, education, social_links
-                         ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-                     """)) {
-
-            for (int i = 1; i <= 3; i++) {
-                ps.setString(1, "user" + i);
-                ps.setString(2, "password" + i);
-                ps.setString(3, "email" + i + "@example.com");
-                ps.setString(4, "012345678" + i);
-                ps.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
-                ps.setBoolean(6, true);
-                ps.setString(7, "FirstName" + i);
-                ps.setString(8, "LastName" + i);
-                ps.setString(9, "Avatar" + i);
-                ps.setString(10, "Location" + i);
-                ps.setString(11, "School" + i);
-                ps.setString(12, "Highlights" + i);
-                ps.setString(13, "Experience" + i);
-                ps.setString(14, "Education" + i);
-                ps.setString(15, "SocialLinks" + i);
-                ps.addBatch();
+        try (Connection conn = getConnection()) {
+            // Tạo schema
+            try (Statement stmt = conn.createStatement()) {
+                stmt.execute("""
+                    CREATE TABLE users (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        username VARCHAR(100),
+                        password VARCHAR(100),
+                        email VARCHAR(100),
+                        phone VARCHAR(100),
+                        created_at TIMESTAMP,
+                        is_active TINYINT,
+                        first_name VARCHAR(100),
+                        last_name VARCHAR(100),
+                        avatar VARCHAR(100),
+                        location VARCHAR(100),
+                        school VARCHAR(100),
+                        highlights TEXT,
+                        experience TEXT,
+                        education TEXT,
+                        social_links VARCHAR(100)
+                    ); 
+                    CREATE TABLE roles (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(50) NOT NULL
+                    );
+                    CREATE TABLE user_roles (
+                        user_id INT,
+                        role_id INT,
+                        PRIMARY KEY (user_id, role_id),
+                        FOREIGN KEY (user_id) REFERENCES users(id),
+                        FOREIGN KEY (role_id) REFERENCES roles(id)
+                    );
+                    CREATE TABLE permissions (
+                        id INT AUTO_INCREMENT PRIMARY KEY,
+                        name VARCHAR(50) NOT NULL,
+                        description TEXT
+                    );
+                    CREATE TABLE staff_permissions (
+                        user_id INT,
+                        permission_id INT,
+                        PRIMARY KEY (user_id, permission_id),
+                        FOREIGN KEY (user_id) REFERENCES users(id),
+                        FOREIGN KEY (permission_id) REFERENCES permissions(id)
+                    );
+                """);
             }
 
-            ps.executeBatch();
+            // Chèn dữ liệu mẫu vào bảng roles
+            try (PreparedStatement ps = conn.prepareStatement("""
+                    INSERT INTO roles (name) VALUES (?)
+                """)) {
+                ps.setString(1, "ADMIN");
+                ps.addBatch();
+                ps.setString(1, "STAFF");
+                ps.addBatch();
+                ps.setString(1, "SUBSCRIBER");
+                ps.addBatch();
+                ps.setString(1, "GENERAL");
+                ps.addBatch();
+                ps.executeBatch();
+            }
+
+            // Chèn dữ liệu vào bảng permissions
+            try (PreparedStatement ps = conn.prepareStatement("""
+                    INSERT INTO permissions (name, description) VALUES (?, ?)
+                """)) {
+                ps.setString(1, "MANAGE_CONTESTS");
+                ps.setString(2, "Permission to manage contests");
+                ps.addBatch();
+                ps.setString(1, "ANSWER_QUESTIONS");
+                ps.setString(2, "Permission to answer questions");
+                ps.addBatch();
+                ps.setString(1, "APPROVE_ARTICLES");
+                ps.setString(2, "Permission to approve articles");
+                ps.addBatch();
+                ps.executeBatch();
+            }
+
+            // Insert 3 user mẫu
+            try (PreparedStatement ps = conn.prepareStatement("""
+                    INSERT INTO users (
+                        username, password, email, phone, created_at, is_active,
+                        first_name, last_name, avatar, location, school,
+                        highlights, experience, education, social_links
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                """)) {
+                for (int i = 1; i <= 3; i++) {
+                    ps.setString(1, "user" + i);
+                    ps.setString(2, "password" + i);
+                    ps.setString(3, "email" + i + "@example.com");
+                    ps.setString(4, "012345678" + i);
+                    ps.setTimestamp(5, Timestamp.valueOf(LocalDateTime.now()));
+                    ps.setBoolean(6, true);
+                    ps.setString(7, "FirstName" + i);
+                    ps.setString(8, "LastName" + i);
+                    ps.setString(9, "Avatar" + i);
+                    ps.setString(10, "Location" + i);
+                    ps.setString(11, "School" + i);
+                    ps.setString(12, "Highlights" + i);
+                    ps.setString(13, "Experience" + i);
+                    ps.setString(14, "Education" + i);
+                    ps.setString(15, "SocialLinks" + i);
+                    ps.addBatch();
+                }
+                ps.executeBatch();
+            }
+
+            // Chèn dữ liệu vào bảng user_roles
+            try (PreparedStatement ps = conn.prepareStatement("""
+                    INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)
+                """)) {
+                ps.setInt(1, 1); // user1
+                ps.setInt(2, 1); // ADMIN
+                ps.addBatch();
+                ps.setInt(1, 2); // user2
+                ps.setInt(2, 2); // STAFF
+                ps.addBatch();
+                ps.setInt(1, 3); // user3
+                ps.setInt(2, 3); // SUBSCRIBER
+                ps.addBatch();
+                ps.executeBatch();
+            }
+
+            // Chèn dữ liệu vào bảng staff_permissions
+            try (PreparedStatement ps = conn.prepareStatement("""
+                    INSERT INTO staff_permissions (user_id, permission_id) VALUES (?, ?)
+                """)) {
+                ps.setInt(1, 2); // user2
+                ps.setInt(2, 1); // MANAGE_CONTESTS
+                ps.addBatch();
+                ps.setInt(1, 2); // user2
+                ps.setInt(2, 2); // ANSWER_QUESTIONS
+                ps.addBatch();
+                ps.setInt(1, 2); // user2
+                ps.setInt(2, 3); // APPROVE_ARTICLES
+                ps.addBatch();
+                ps.executeBatch();
+            }
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
@@ -91,7 +174,12 @@ class UserDaoTest {
     static void cleanup() {
         try (Connection conn = getConnection();
              Statement stmt = conn.createStatement()) {
+            stmt.execute("DELETE FROM user_roles");
+            stmt.execute("DELETE FROM staff_permissions");
             stmt.execute("DELETE FROM users");
+            stmt.execute("DELETE FROM roles");
+            stmt.execute("DELETE FROM permissions");
+
         } catch (SQLException throwables) {
             throwables.printStackTrace();
         }
@@ -120,6 +208,15 @@ class UserDaoTest {
         assertEquals("Education1", retrieved.getEducation());
         assertEquals("SocialLinks1", retrieved.getSocialLinks());
         assertNotNull(retrieved.getCreatedAt());
+
+        List<Role> roles = retrieved.getRoles().stream().toList();
+        assertEquals(1, roles.size());
+        assertEquals("ADMIN", roles.getFirst().getName());
+
+        List<Permission> permissions = retrieved.getPermissions().stream().toList();
+        assertEquals(0, permissions.size()); // user1 không có quyền nào
+
+
     }
 
     // Test thêm user2
@@ -132,7 +229,16 @@ class UserDaoTest {
         assertNotNull(retrieved);
         assertEquals(2, retrieved.getId());
         assertEquals("user2", retrieved.getUsername());
-        // Có thể kiểm tra thêm nếu cần
+
+        List<Role> roles = retrieved.getRoles().stream().toList();
+        assertEquals(1, roles.size());
+        assertEquals("STAFF", roles.getFirst().getName());
+
+        List<Permission> permissions = retrieved.getPermissions().stream().toList();
+        assertEquals(3, permissions.size());
+        assertEquals("APPROVE_ARTICLES", permissions.get(0).getName());
+        assertEquals("MANAGE_CONTESTS", permissions.get(1).getName());
+        assertEquals("ANSWER_QUESTIONS", permissions.get(2).getName());
     }
 
     // Test không tồn tại
@@ -144,16 +250,6 @@ class UserDaoTest {
         // Assert
         assertNull(retrieved);
     }
-
-//    @Test
-//    void testGetAllUsers_WhenTableIsEmpty_ReturnEmptyList(){
-//        // Act
-//        List<User> users = userDao.getAllUsers();
-//
-//        // Assert
-//        assertNotNull(users);               // List không bao giờ null
-//        assertFalse(users.isEmpty());       // Phải rỗng (bởi vì có 3 phần tử nên không rỗng được)
-//    }
 
     @Test
     void testGetAllUsers_WhenDataExists_ReturnListOfUsers() {

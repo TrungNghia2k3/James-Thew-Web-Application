@@ -19,25 +19,6 @@ import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
 public class UserDaoImpl implements UserDao {
     @Override
-    public void updateUser(User user) {
-        String UPDATE_GENERAL_USER_QUERY = "UPDATE users " +
-                "SET email = ?, first_name = ?, last_name = ?, phone = ?, avatar = ? " +
-                "WHERE id = ?";
-
-        try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(UPDATE_GENERAL_USER_QUERY)) {
-            stmt.setString(1, user.getEmail());
-            stmt.setString(2, user.getFirstName());
-            stmt.setString(3, user.getLastName());
-            stmt.setString(4, user.getPhone());
-            stmt.setString(5, user.getAvatar());
-            stmt.setInt(6, user.getId());
-            stmt.executeUpdate();
-        } catch (SQLException e) {
-            throw new RuntimeException("SQLException: " + e.getMessage());
-        }
-    }
-
     public boolean existsById(int id) {
 
         String CHECK_USER_ID_EXISTS_QUERY = "SELECT 1 FROM users WHERE id = ? LIMIT 1";
@@ -54,19 +35,20 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    @Override
     public List<User> getAllUsers() {
 
         final String SELECT_ALL_USERS_QUERY =
                 "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
-                        "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
-                        "u.highlights, u.experience, u.education, u.social_links, " +
-                        "r.id AS role_id, r.name AS role_name, " +
-                        "p.id AS permission_id, p.name AS permission_name " +
-                        "FROM users u " +
-                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                        "LEFT JOIN roles r ON ur.role_id = r.id " +
-                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                        "LEFT JOIN permissions p ON sp.permission_id = p.id";
+                "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                "u.highlights, u.experience, u.education, u.social_links, " +
+                "r.id AS role_id, r.name AS role_name, " +
+                "p.id AS permission_id, p.name AS permission_name " +
+                "FROM users u " +
+                "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                "LEFT JOIN roles r ON ur.role_id = r.id " +
+                "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                "LEFT JOIN permissions p ON sp.permission_id = p.id";
 
         Map<Integer, User> userMap = new HashMap<>(); // map userId -> User
 
@@ -127,19 +109,20 @@ public class UserDaoImpl implements UserDao {
         return new ArrayList<>(userMap.values());
     }
 
+    @Override
     public User getUserById(int id) {
 
         String SELECT_USER_BY_ID_QUERY =
                 "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, u.created_at, " +
-                        "u.is_active, u.avatar, u.location, u.school, u.highlights, u.experience, u.education, u.social_links, " +
-                        "r.id AS role_id, r.name AS role_name, " +
-                        "p.id AS permission_id, p.name AS permission_name " +
-                        "FROM users u " +
-                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                        "LEFT JOIN roles r ON ur.role_id = r.id " +
-                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                        "LEFT JOIN permissions p ON sp.permission_id = p.id " +
-                        "WHERE u.id = ?";
+                "u.is_active, u.avatar, u.location, u.school, u.highlights, u.experience, u.education, u.social_links, " +
+                "r.id AS role_id, r.name AS role_name, " +
+                "p.id AS permission_id, p.name AS permission_name " +
+                "FROM users u " +
+                "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                "LEFT JOIN roles r ON ur.role_id = r.id " +
+                "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                "LEFT JOIN permissions p ON sp.permission_id = p.id " +
+                "WHERE u.id = ?";
 
         Map<Integer, User> userMap = new HashMap<>();
 
@@ -202,12 +185,13 @@ public class UserDaoImpl implements UserDao {
         return userMap.values().stream().findFirst().orElse(null);
     }
 
+    @Override
     public void addUser(User user) {
 
+        String INSERT_USER_QUERY = "INSERT INTO users (username, password, created_at, is_active) VALUES (?, ?, NOW(), true)";
         String GET_USER_ID = "SELECT id FROM users WHERE username = ?";
         String GET_ROLE_ID = "SELECT id FROM roles WHERE name = ?";
         String INSERT_USER_ROLE = "INSERT INTO user_roles (user_id, role_id) VALUES (?, ?)";
-        String INSERT_USER_QUERY = "INSERT INTO users (username, password, created_at, is_active) VALUES (?, ?, NOW(), true)";
 
         String hashedPassword = BCrypt.hashpw(user.getPassword(), BCrypt.gensalt());
 
@@ -269,63 +253,27 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
-    public void editGeneralUser(User user) {
-        StringBuilder queryBuilder = new StringBuilder("UPDATE users SET ");
-        List<Object> params = new ArrayList<>();
-
-        // Chỉ thêm vào field nào không null (và có dữ liệu hợp lệ)
-        if (user.getEmail() != null) {
-            queryBuilder.append("email = ?, ");
-            params.add(user.getEmail());
-        }
-        if (user.getFirstName() != null) {
-            queryBuilder.append("first_name = ?, ");
-            params.add(user.getFirstName());
-        }
-        if (user.getLastName() != null) {
-            queryBuilder.append("last_name = ?, ");
-            params.add(user.getLastName());
-        }
-        if (user.getPhone() != null) {
-            queryBuilder.append("phone = ?, ");
-            params.add(user.getPhone());
-        }
-        if (user.getAvatar() != null) {
-            queryBuilder.append("avatar = ?, ");
-            params.add(user.getAvatar());
-        }
-
-        // Nếu không có field nào cần update thì bỏ qua
-        if (params.isEmpty()) {
-            throw new RuntimeException("No fields to update for user id: " + user.getId());
-        }
-
-        // Xóa dấu phẩy cuối cùng
-        int lastComma = queryBuilder.lastIndexOf(", ");
-        if (lastComma != -1) {
-            queryBuilder.delete(lastComma, lastComma + 2);
-        }
-
-        queryBuilder.append(" WHERE id = ?");
-        params.add(user.getId());
-
-        String finalQuery = queryBuilder.toString();
-        System.out.println("SQL UPDATE query: " + finalQuery);
+    @Override
+    public void updateUser(User user, String avatarPath) {
+        String UPDATE_GENERAL_USER_QUERY = "UPDATE users " +
+                                           "SET email = ?, first_name = ?, last_name = ?, phone = ?, avatar = ? " +
+                                           "WHERE id = ?";
 
         try (Connection conn = getConnection();
-             PreparedStatement stmt = conn.prepareStatement(finalQuery)) {
-
-            for (int i = 0; i < params.size(); i++) {
-                stmt.setObject(i + 1, params.get(i));
-            }
-
+             PreparedStatement stmt = conn.prepareStatement(UPDATE_GENERAL_USER_QUERY)) {
+            stmt.setString(1, user.getEmail());
+            stmt.setString(2, user.getFirstName());
+            stmt.setString(3, user.getLastName());
+            stmt.setString(4, user.getPhone());
+            stmt.setString(5, avatarPath);
+            stmt.setInt(6, user.getId());
             stmt.executeUpdate();
-
         } catch (SQLException e) {
-            throw new RuntimeException("Error while updating user: " + e.getMessage(), e);
+            throw new RuntimeException("SQLException: " + e.getMessage());
         }
     }
 
+    @Override
     public void deleteUser(int id) {
 
         String DELETE_USER_QUERY = "DELETE FROM users WHERE id = ?";
@@ -340,11 +288,12 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    @Override
     public void toggleUserActiveStatus(int id) {
 
         String UPDATE_USER_ACTIVE_STATUS_QUERY = "UPDATE users " +
-                "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
-                "WHERE id = ?";
+                                                 "SET is_active = CASE WHEN is_active = 0 THEN 1 ELSE 0 END " +
+                                                 "WHERE id = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(UPDATE_USER_ACTIVE_STATUS_QUERY)) {
@@ -355,18 +304,19 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    @Override
     public User findUserByUsername(String username) {
 
         String SELECT_USER_BY_USERNAME_QUERY =
                 "SELECT u.id, u.username, u.password, u.is_active, " +
-                        "r.id AS role_id, r.name AS role_name, " +
-                        "p.id AS permission_id, p.name AS permission_name " +
-                        "FROM users u " +
-                        "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
-                        "LEFT JOIN roles r ON ur.role_id = r.id " +
-                        "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
-                        "LEFT JOIN permissions p ON sp.permission_id = p.id " +
-                        "WHERE u.username = ?";
+                "r.id AS role_id, r.name AS role_name, " +
+                "p.id AS permission_id, p.name AS permission_name " +
+                "FROM users u " +
+                "LEFT JOIN user_roles ur ON u.id = ur.user_id " +
+                "LEFT JOIN roles r ON ur.role_id = r.id " +
+                "LEFT JOIN staff_permissions sp ON u.id = sp.user_id " +
+                "LEFT JOIN permissions p ON sp.permission_id = p.id " +
+                "WHERE u.username = ?";
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_USER_BY_USERNAME_QUERY)) {
@@ -409,6 +359,7 @@ public class UserDaoImpl implements UserDao {
         }
     }
 
+    @Override
     public boolean isSubscriptionValid(int userId) {
 
         String SELECT_SUBSCRIPTION_QUERY = "SELECT subscription_end_date FROM users WHERE id = ?";
@@ -444,5 +395,185 @@ public class UserDaoImpl implements UserDao {
         } catch (SQLException e) {
             throw new RuntimeException("Error while checking user exists: " + e.getMessage(), e);
         }
+    }
+
+    @Override
+    public List<User> getUsersByRole(String role) {
+        String SELECT_USERS_BY_ROLE_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                "u.highlights, u.experience, u.education, u.social_links " +
+                "FROM users u " +
+                "JOIN user_roles ur ON u.id = ur.user_id " +
+                "JOIN roles r ON ur.role_id = r.id " +
+                "WHERE r.name = ?";
+
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_USERS_BY_ROLE_QUERY)) {
+
+            stmt.setString(1, role);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setPhone(rs.getString("phone"));
+                user.setCreatedAt(rs.getTimestamp("created_at"));
+                user.setActive(rs.getBoolean("is_active"));
+                user.setAvatar(rs.getString("avatar"));
+                user.setLocation(rs.getString("location"));
+                user.setSchool(rs.getString("school"));
+                user.setHighlights(rs.getString("highlights"));
+                user.setExperience(rs.getString("experience"));
+                user.setEducation(rs.getString("education"));
+                user.setSocialLinks(rs.getString("social_links"));
+
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error while fetching users by role: " + e.getMessage(), e);
+        }
+
+        return users;
+    }
+
+    @Override
+    public List<User> getUsersByPermission(String permission) {
+        String SELECT_USERS_BY_PERMISSION_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                "u.highlights, u.experience, u.education, u.social_links " +
+                "FROM users u " +
+                "JOIN staff_permissions sp ON u.id = sp.user_id " +
+                "JOIN permissions p ON sp.permission_id = p.id " +
+                "WHERE p.name = ?";
+
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_USERS_BY_PERMISSION_QUERY)) {
+
+            stmt.setString(1, permission);
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setPhone(rs.getString("phone"));
+                user.setCreatedAt(rs.getTimestamp("created_at"));
+                user.setActive(rs.getBoolean("is_active"));
+                user.setAvatar(rs.getString("avatar"));
+                user.setLocation(rs.getString("location"));
+                user.setSchool(rs.getString("school"));
+                user.setHighlights(rs.getString("highlights"));
+                user.setExperience(rs.getString("experience"));
+                user.setEducation(rs.getString("education"));
+                user.setSocialLinks(rs.getString("social_links"));
+
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error while fetching users by permission: " + e.getMessage(), e);
+        }
+
+        return users;
+    }
+
+    @Override
+    public List<User> getUsersByUsername(String username) {
+        String SELECT_USERS_BY_USERNAME_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                "u.highlights, u.experience, u.education, u.social_links " +
+                "FROM users u " +
+                "WHERE u.username LIKE ?";
+
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_USERS_BY_USERNAME_QUERY)) {
+
+            stmt.setString(1, "%" + username + "%");
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setPhone(rs.getString("phone"));
+                user.setCreatedAt(rs.getTimestamp("created_at"));
+                user.setActive(rs.getBoolean("is_active"));
+                user.setAvatar(rs.getString("avatar"));
+                user.setLocation(rs.getString("location"));
+                user.setSchool(rs.getString("school"));
+                user.setHighlights(rs.getString("highlights"));
+                user.setExperience(rs.getString("experience"));
+                user.setEducation(rs.getString("education"));
+                user.setSocialLinks(rs.getString("social_links"));
+
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error while fetching users by username: " + e.getMessage(), e);
+        }
+
+        return users;
+    }
+
+    @Override
+    public List<User> getUsersByEmail(String email) {
+        String SELECT_USERS_BY_EMAIL_QUERY =
+                "SELECT u.id, u.username, u.email, u.first_name, u.last_name, u.phone, " +
+                "u.created_at, u.is_active, u.avatar, u.location, u.school, " +
+                "u.highlights, u.experience, u.education, u.social_links " +
+                "FROM users u " +
+                "WHERE u.email LIKE ?";
+
+        List<User> users = new ArrayList<>();
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_USERS_BY_EMAIL_QUERY)) {
+
+            stmt.setString(1, "%" + email + "%");
+            ResultSet rs = stmt.executeQuery();
+
+            while (rs.next()) {
+                User user = new User();
+                user.setId(rs.getInt("id"));
+                user.setUsername(rs.getString("username"));
+                user.setEmail(rs.getString("email"));
+                user.setFirstName(rs.getString("first_name"));
+                user.setLastName(rs.getString("last_name"));
+                user.setPhone(rs.getString("phone"));
+                user.setCreatedAt(rs.getTimestamp("created_at"));
+                user.setActive(rs.getBoolean("is_active"));
+                user.setAvatar(rs.getString("avatar"));
+                user.setLocation(rs.getString("location"));
+                user.setSchool(rs.getString("school"));
+                user.setHighlights(rs.getString("highlights"));
+                user.setExperience(rs.getString("experience"));
+                user.setEducation(rs.getString("education"));
+                user.setSocialLinks(rs.getString("social_links"));
+
+                users.add(user);
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error while fetching users by email: " + e.getMessage(), e);
+        }
+
+        return users;
     }
 }

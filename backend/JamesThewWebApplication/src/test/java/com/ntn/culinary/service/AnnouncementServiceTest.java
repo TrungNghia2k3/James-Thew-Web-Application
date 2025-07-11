@@ -55,7 +55,7 @@ class AnnouncementServiceTest {
 
         when(announcementDao.getAllAnnouncements()).thenReturn(List.of(announcement));
         when(contestDao.getContestById(42)).thenReturn(contest);
-        when(announceWinnerDao.getAllWinnersByAnnouncementIdAndEntryId(1, 42)).thenReturn(List.of(winner));
+        when(announceWinnerDao.getAllWinnersByAnnouncementId(1)).thenReturn(List.of(winner));
         when(contestEntryDao.getContestEntryById(200)).thenReturn(entry);
 
         // Act
@@ -71,7 +71,7 @@ class AnnouncementServiceTest {
 
         verify(announcementDao).getAllAnnouncements();
         verify(contestDao).getContestById(42);
-        verify(announceWinnerDao).getAllWinnersByAnnouncementIdAndEntryId(1, 42);
+        verify(announceWinnerDao).getAllWinnersByAnnouncementId(1);
         verify(contestEntryDao).getContestEntryById(200);
     }
 
@@ -100,7 +100,7 @@ class AnnouncementServiceTest {
 
         when(announcementDao.getAllAnnouncements()).thenReturn(List.of(announcement));
         when(contestDao.getContestById(42)).thenReturn(contest);
-        when(announceWinnerDao.getAllWinnersByAnnouncementIdAndEntryId(1, 42)).thenReturn(List.of(winner));
+        when(announceWinnerDao.getAllWinnersByAnnouncementId(1)).thenReturn(List.of(winner));
         when(contestEntryDao.getContestEntryById(200)).thenThrow(new RuntimeException("ContestEntry not found"));
 
         // Act
@@ -109,7 +109,7 @@ class AnnouncementServiceTest {
         // Assert
         verify(announcementDao).getAllAnnouncements();
         verify(contestDao).getContestById(42);
-        verify(announceWinnerDao).getAllWinnersByAnnouncementIdAndEntryId(1, 42);
+        verify(announceWinnerDao).getAllWinnersByAnnouncementId(1);
         verify(contestEntryDao).getContestEntryById(200);
     }
 
@@ -305,7 +305,7 @@ class AnnouncementServiceTest {
 
         when(announcementDao.getAllAnnouncements()).thenReturn(List.of(announcement));
         when(contestDao.getContestById(42)).thenReturn(contest);
-        when(announceWinnerDao.getAllWinnersByAnnouncementIdAndEntryId(1, 42)).thenReturn(List.of(winner));
+        when(announceWinnerDao.getAllWinnersByAnnouncementId(1)).thenReturn(List.of(winner));
         when(contestEntryDao.getContestEntryById(200)).thenReturn(entry);
 
 
@@ -322,7 +322,7 @@ class AnnouncementServiceTest {
 
         verify(announcementDao).getAllAnnouncements();
         verify(contestDao).getContestById(42);
-        verify(announceWinnerDao).getAllWinnersByAnnouncementIdAndEntryId(1, 42);
+        verify(announceWinnerDao).getAllWinnersByAnnouncementId(1);
         verify(contestEntryDao).getContestEntryById(200);
     }
 }

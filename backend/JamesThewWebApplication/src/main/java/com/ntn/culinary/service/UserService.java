@@ -6,14 +6,13 @@ import com.ntn.culinary.model.User;
 import com.ntn.culinary.request.RegisterRequest;
 import com.ntn.culinary.request.UserRequest;
 import com.ntn.culinary.response.UserResponse;
-import com.ntn.culinary.utils.ImageUtils;
 
-import javax.servlet.http.Part;
-import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import static com.ntn.culinary.utils.ImageUtils.*;
 
 public class UserService {
     private final UserDao userDao;
@@ -42,28 +41,28 @@ public class UserService {
         userDao.addUser(user);
     }
 
-    public void editGeneralUser(UserRequest request, Part avatar) {
+    public void updateGeneralUser(UserRequest request) {
         User existingUser = userDao.getUserById(request.getId());
 
         if (existingUser == null) {
             throw new NotFoundException("User with ID " + request.getId() + " not found.");
         }
 
-        if (avatar != null && avatar.getSize() > 0) {
+        String fileName = null;
+        if (request.getAvatar() != null && request.getAvatar().getSize() > 0) {
             // Xóa ảnh cũ nếu có
             if (existingUser.getAvatar() != null) {
-                ImageUtils.deleteImage(existingUser.getAvatar(), "avatars");
+                deleteImage(existingUser.getAvatar(), "avatars");
             }
 
             // Tạo slug từ tên người dùng
-            String slug = ImageUtils.slugify(request.getFirstName() + " " + request.getLastName());
+            String slug = slugify(request.getFirstName() + " " + request.getLastName());
 
             // Lưu ảnh và cập nhật tên file
-            String fileName = ImageUtils.saveImage(avatar, slug, "avatars");
-            request.setAvatar(fileName);
+            fileName = saveImage(request.getAvatar(), slug, "avatars");
         }
 
-        userDao.editGeneralUser(mapRequestToUser(request));
+        userDao.updateUser(mapRequestToUser(request), fileName);
     }
 
     public void deleteUser(int id) {
@@ -99,7 +98,6 @@ public class UserService {
         user.setFirstName(request.getFirstName());
         user.setLastName(request.getLastName());
         user.setPhone(request.getPhone());
-        user.setAvatar(request.getAvatar());
         user.setLocation(request.getLocation());
         user.setSchool(request.getSchool());
         user.setHighlights(request.getHighlights());

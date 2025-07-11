@@ -13,6 +13,8 @@ import java.util.Date;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import static com.ntn.culinary.utils.CastUtils.toStringList;
+
 public class JwtService {
     private static final Dotenv dotenv = Dotenv.load();
     private static final String SECRET_KEY = dotenv.get("SECRET_KEY");
@@ -48,27 +50,48 @@ public class JwtService {
     }
 
     public boolean hasRequiredRole(HttpServletRequest request, List<String> userRoles) {
-        String requiredRole = getRequiredRole(request.getRequestURI());
-        return requiredRole == null || userRoles.contains(requiredRole.toUpperCase());
+        // Loại bỏ contextPath khỏi URI
+        String uri = request.getRequestURI().substring(request.getContextPath().length());
+
+        List<String> requiredRoles = getRequiredRoles(uri);
+
+        if (requiredRoles == null || requiredRoles.isEmpty()) {
+            return true;
+        }
+
+        for (String role : userRoles) {
+            if (requiredRoles.contains(role.toUpperCase())) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
-    public boolean hasPermission(Claims claims, String permission) {
+    public boolean hasPermission(HttpServletRequest request, Claims claims, String permission) {
+        // Nếu user có vai trò ADMIN thì luôn cho phép
+        List<String> roles = toStringList(request.getAttribute("roles"));
+        if (roles != null && roles.contains("ADMIN")) {
+            return true;
+        }
+
         List<String> permissions = claims.get("permissions", List.class);
         return permissions != null && permissions.contains(permission);
     }
 
-    private String getRequiredRole(String uri) {
-        if (uri.startsWith("/api/protected/admin/**")) {
-            return "admin";
+
+    private List<String> getRequiredRoles(String uri) {
+        if (uri.startsWith("/api/protected/admin")) {
+            return List.of("ADMIN"); // chỉ ADMIN
         } else if (uri.startsWith("/api/protected/staff")) {
-            return "staff";
+            return List.of("ADMIN", "STAFF", "WRITER");
         } else if (uri.startsWith("/api/protected/writer")) {
-            return "writer";
+            return List.of("ADMIN", "WRITER");
         } else if (uri.startsWith("/api/protected/subscriber")) {
-            return "subscriber";
+            return List.of("ADMIN", "SUBSCRIBER");
         } else if (uri.startsWith("/api/protected/general")) {
-            return "general";
+            return List.of("ADMIN", "STAFF", "WRITER", "SUBSCRIBER", "GENERAL"); // mọi role
         }
-        return null;
+        return null; // nếu không yêu cầu role nào cả
     }
 }

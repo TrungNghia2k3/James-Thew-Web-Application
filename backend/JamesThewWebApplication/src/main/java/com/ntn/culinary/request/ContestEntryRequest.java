@@ -6,6 +6,7 @@ import java.util.Date;
 import java.util.List;
 
 public class ContestEntryRequest {
+    private int id;
     private int contestId;
     private int userId;
     private String name;
@@ -43,6 +44,14 @@ public class ContestEntryRequest {
         this.dateModified = dateModified;
         this.status = status;
         this.contestEntryInstructions = contestEntryInstructions;
+    }
+
+    public int getId() {
+        return id;
+    }
+
+    public void setId(int id) {
+        this.id = id;
     }
 
     public int getContestId() {
