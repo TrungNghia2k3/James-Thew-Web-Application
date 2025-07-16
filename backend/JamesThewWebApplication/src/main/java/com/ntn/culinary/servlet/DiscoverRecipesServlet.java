@@ -6,6 +6,7 @@ import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.RecipePageResponse;
 import com.ntn.culinary.response.RecipeResponse;
 import com.ntn.culinary.service.RecipeService;
+import com.ntn.culinary.service.impl.RecipeServiceImpl;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -13,6 +14,8 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 
+import static com.ntn.culinary.response.ApiResponse.error;
+import static com.ntn.culinary.response.ApiResponse.success;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/discover/recipes")
@@ -28,7 +31,7 @@ public class DiscoverRecipesServlet extends HttpServlet {
         CommentDao commentDao = new CommentDaoImpl();
         NutritionDao nutritionDao = new NutritionDaoImpl();
 
-        this.recipeService = new RecipeService(recipeDao, categoryDao, areaDao, userDao, detailedInstructionsDao, commentDao, nutritionDao);
+        this.recipeService = new RecipeServiceImpl(recipeDao, categoryDao, areaDao, userDao, detailedInstructionsDao, commentDao, nutritionDao);
     }
 
     // Thêm nhiều các bộ lọc và tìm kiếm cho các công thức nấu ăn
@@ -58,11 +61,11 @@ public class DiscoverRecipesServlet extends HttpServlet {
             int totalPages = (int) Math.ceil((double) totalItems / size);
 
             RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-            sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
+            sendResponse(resp, success(200, "Free recipes fetched successfully", response));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid page or size parameter"));
+            sendResponse(resp, error(400, "Invalid page or size parameter"));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 

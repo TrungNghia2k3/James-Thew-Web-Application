@@ -1,301 +1,220 @@
 package com.ntn.culinary.service;
 
-import com.ntn.culinary.constant.AccessType;
-import com.ntn.culinary.dao.*;
-import com.ntn.culinary.exception.NotFoundException;
-import com.ntn.culinary.model.DetailedInstructions;
-import com.ntn.culinary.model.Recipe;
 import com.ntn.culinary.request.RecipeRequest;
 import com.ntn.culinary.response.RecipeResponse;
-import com.ntn.culinary.utils.ImageUtils;
 
 import javax.servlet.http.Part;
-import java.sql.Date;
 import java.util.List;
 
-import static com.ntn.culinary.utils.StringUtils.capitalize;
+public interface RecipeService {
+    /**
+         * Adds a new recipe with the provided details and image.
+         *
+         * @param recipeRequest the recipe details
+         * @param imagePart the image file part
+         */
+        void addRecipe(RecipeRequest recipeRequest, Part imagePart);
 
-public class RecipeService {
-    private final RecipeDao recipeDao;
-    private final CategoryDao categoryDao;
-    private final AreaDao areaDao;
-    private final UserDao userDao;
-    private final DetailedInstructionsDao detailedInstructionsDao;
-    private final CommentDao commentDao;
-    private final NutritionDao nutritionDao;
+        /**
+         * Updates an existing recipe with the provided details and image.
+         *
+         * @param recipeRequest the updated recipe details
+         * @param imagePart the new image file part
+         */
+        void updateRecipe(RecipeRequest recipeRequest, Part imagePart);
 
-    public RecipeService(RecipeDao recipeDao, CategoryDao categoryDao, AreaDao areaDao, UserDao userDao,
-                         DetailedInstructionsDao detailedInstructionsDao, CommentDao commentDao, NutritionDao nutritionDao) {
-        this.recipeDao = recipeDao;
-        this.categoryDao = categoryDao;
-        this.areaDao = areaDao;
-        this.userDao = userDao;
-        this.detailedInstructionsDao = detailedInstructionsDao;
-        this.commentDao = commentDao;
-        this.nutritionDao = nutritionDao;
-    }
+        /**
+         * Deletes a recipe by its ID.
+         *
+         * @param id the ID of the recipe to delete
+         */
+        void deleteRecipe(int id);
 
-    public void addRecipe(RecipeRequest recipeRequest, Part imagePart) {
-        validateRecipeRequest(recipeRequest);
+        /**
+         * Retrieves a free recipe by its ID.
+         *
+         * @param id the ID of the recipe
+         * @return the recipe response
+         */
+        RecipeResponse getFreeRecipeById(int id);
 
-        if (imagePart != null && imagePart.getSize() > 0) {
-            String slug = ImageUtils.slugify(recipeRequest.getName());
-            String fileName = ImageUtils.saveImage(imagePart, slug, "recipes");
-            recipeRequest.setImage(fileName);
-        }
+        /**
+         * Retrieves a recipe by its ID.
+         *
+         * @param id the ID of the recipe
+         * @return the recipe response
+         */
+        RecipeResponse getRecipeById(int id);
 
-        recipeDao.addRecipe(mapRequestToRecipe(recipeRequest));
-    }
+        /**
+         * Retrieves a paginated list of all free recipes.
+         *
+         * @param page the page number
+         * @param size the page size
+         * @return list of free recipe responses
+         */
+        List<RecipeResponse> getAllFreeRecipes(int page, int size);
 
-    public void updateRecipe(RecipeRequest recipeRequest, Part imagePart) {
-        validateRecipeRequest(recipeRequest);
+        /**
+         * Retrieves a paginated list of all recipes.
+         *
+         * @param page the page number
+         * @param size the page size
+         * @return list of recipe responses
+         */
+        List<RecipeResponse> getAllRecipes(int page, int size);
 
-        Recipe existingRecipe = recipeDao.getRecipeById(recipeRequest.getId());
-        if (existingRecipe == null) {
-            throw new NotFoundException("Recipe with ID " + recipeRequest.getId() + " does not exist.");
-        }
+        /**
+         * Searches and filters free recipes based on criteria.
+         *
+         * @param keyword the search keyword
+         * @param category the recipe category
+         * @param area the recipe area
+         * @param createdBy the creator's user ID
+         * @param accessType the access type
+         * @param page the page number
+         * @param size the page size
+         * @return list of filtered free recipe responses
+         */
+        List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, String area, int createdBy, String accessType, int page, int size);
 
-        if (imagePart != null && imagePart.getSize() > 0) {
-            // Delete old image if it exists
-            if (existingRecipe.getImage() != null) {
-                ImageUtils.deleteImage(existingRecipe.getImage(), "recipes");
-            }
-            String slug = ImageUtils.slugify(recipeRequest.getName());
-            String fileName = ImageUtils.saveImage(imagePart, slug, "recipes");
-            recipeRequest.setImage(fileName);
-        } else {
-            recipeRequest.setImage(existingRecipe.getImage());
-        }
+        /**
+         * Searches and filters recipes based on criteria.
+         *
+         * @param keyword the search keyword
+         * @param category the recipe category
+         * @param area the recipe area
+         * @param recipedBy the creator's user ID
+         * @param page the page number
+         * @param size the page size
+         * @return list of filtered recipe responses
+         */
+        List<RecipeResponse> searchAndFilterRecipes(String keyword, String category, String area, int recipedBy, int page, int size);
 
-        recipeDao.updateRecipe(mapRequestToRecipe(recipeRequest));
-    }
+        /**
+         * Retrieves all recipes created by a specific user.
+         *
+         * @param userId the user ID
+         * @param page the page number
+         * @param size the page size
+         * @return list of recipe responses
+         */
+        List<RecipeResponse> getAllRecipesByUserId(int userId, int page, int size);
 
-    public void deleteRecipe(int id) {
-        Recipe existingRecipe = recipeDao.getRecipeById(id);
-        if (existingRecipe == null) {
-            throw new NotFoundException("Recipe with ID " + id + " does not exist.");
-        }
+        /**
+         * Retrieves all free recipes by category.
+         *
+         * @param category the category
+         * @param page the page number
+         * @param size the page size
+         * @return list of free recipe responses
+         */
+        List<RecipeResponse> getAllFreeRecipesByCategory(String category, int page, int size);
 
-        // Delete image if it exists
-        if (existingRecipe.getImage() != null) {
-            ImageUtils.deleteImage(existingRecipe.getImage(), "recipes");
-        }
+        /**
+         * Retrieves all recipes by category.
+         *
+         * @param category the category
+         * @param page the page number
+         * @param size the page size
+         * @return list of recipe responses
+         */
+        List<RecipeResponse> getAllRecipesByCategory(String category, int page, int size);
 
-        recipeDao.deleteRecipe(id);
-    }
+        /**
+         * Retrieves all free recipes by area.
+         *
+         * @param area the area
+         * @param page the page number
+         * @param size the page size
+         * @return list of free recipe responses
+         */
+        List<RecipeResponse> getAllFreeRecipesByArea(String area, int page, int size);
 
-    public RecipeResponse getFreeRecipeById(int id) {
-        Recipe recipe = recipeDao.getFreeRecipeById(id);
-        if (recipe == null) {
-            throw new NotFoundException("Recipe not found");
-        }
-        return mapRecipeToResponse(recipe);
-    }
+        /**
+         * Retrieves all recipes by area ID.
+         *
+         * @param area the area
+         * @param page the page number
+         * @param size the page size
+         * @return list of recipe responses
+         */
+        List<RecipeResponse> getAllRecipesByArea(String area, int page, int size);
 
-    public RecipeResponse getRecipeById(int id) {
-        if (recipeDao.existsById(id)) {
-            Recipe recipe = recipeDao.getRecipeById(id);
-            return mapRecipeToResponse(recipe);
-        } else {
-            throw new NotFoundException("Recipe with ID " + id + " does not exist.");
-        }
+        /**
+         * Counts the number of free recipes matching the search and filter criteria.
+         *
+         * @param keyword the search keyword
+         * @param category the recipe category
+         * @param area the recipe area
+         * @param recipedBy the creator's user ID
+         * @param accessType the access type
+         * @return the count of matching free recipes
+         */
+        int countSearchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType);
 
-    }
+        /**
+         * Counts the number of recipes matching the search and filter criteria.
+         *
+         * @param keyword the search keyword
+         * @param category the recipe category
+         * @param area the recipe area
+         * @param recipedBy the creator's user ID
+         * @return the count of matching recipes
+         */
+        int countSearchAndFilterRecipes(String keyword, String category, String area, int recipedBy);
 
-    public List<RecipeResponse> getAllFreeRecipes(int page, int size) {
-        return recipeDao.getAllFreeRecipes(page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
+        /**
+         * Counts all free recipes.
+         *
+         * @return the count of all free recipes
+         */
+        int countAllFreeRecipes();
 
-    public List<RecipeResponse> getAllRecipes(int page, int size) {
-        return recipeDao.getAllRecipes(page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
+        /**
+         * Counts all recipes.
+         *
+         * @return the count of all recipes
+         */
+        int countAllRecipes();
 
-    public List<RecipeResponse> searchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType, int page, int size) {
+        /**
+         * Counts all recipes created by a specific user.
+         *
+         * @param userId the user ID
+         * @return the count of recipes by user
+         */
+        int countAllRecipesByUserId(int userId);
 
-        if (category != null) {
-            category = capitalize(category);
-        }
+        /**
+         * Counts all free recipes by category.
+         *
+         * @param category the category
+         * @return the count of free recipes in the category
+         */
+        int countAllFreeRecipesByCategory(String category);
 
-        if (area != null) {
-            area = capitalize(area);
-        }
+        /**
+         * Counts all recipes by category.
+         *
+         * @param category the category
+         * @return the count of recipes in the category
+         */
+        int countAllRecipesByCategory(String category);
 
-        return recipeDao.searchAndFilterFreeRecipes(keyword, category, area, recipedBy, accessType, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
+        /**
+         * Counts all free recipes by area.
+         *
+         * @param area the area
+         * @return the count of free recipes in the area
+         */
+        int countAllFreeRecipesByArea(String area);
 
-    public List<RecipeResponse> searchAndFilterRecipes(String keyword, String category, String area, int recipedBy, int page, int size) {
-
-        if (category != null) {
-            category = capitalize(category);
-        }
-
-        if (area != null) {
-            area = capitalize(area);
-        }
-
-        return recipeDao.searchAndFilterRecipes(keyword, category, area, recipedBy, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getAllRecipesByUserId(int userId, int page, int size) {
-        return recipeDao.getAllRecipesByUserId(userId, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getAllFreeRecipesByCategoryId(int categoryId, int page, int size) {
-        return recipeDao.getAllFreeRecipesByCategoryId(categoryId, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getAllRecipesByCategoryId(int categoryId, int page, int size) {
-        return recipeDao.getAllRecipesByCategoryId(categoryId, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getAllFreeRecipesByAreaId(int areaId, int page, int size) {
-        return recipeDao.getAllFreeRecipesByAreaId(areaId, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public List<RecipeResponse> getAllRecipesByAreaId(int areaId, int page, int size) {
-        return recipeDao.getAllRecipesByAreaId(areaId, page, size).stream()
-                .map(this::mapRecipeToResponse)
-                .toList();
-    }
-
-    public int countSearchAndFilterFreeRecipes(String keyword, String category, String area, int recipedBy, String accessType) {
-
-        if (category != null) {
-            category = capitalize(category);
-        }
-
-        if (area != null) {
-            area = capitalize(area);
-        }
-
-        return recipeDao.countSearchAndFilterFreeRecipes(keyword, category, area, recipedBy, accessType.toUpperCase());
-    }
-
-    public int countSearchAndFilterRecipes(String keyword, String category, String area, int recipedBy) {
-
-        if (category != null) {
-            category = capitalize(category);
-        }
-
-        if (area != null) {
-            area = capitalize(area);
-        }
-
-        return recipeDao.countSearchAndFilterRecipes(keyword, category, area, recipedBy);
-    }
-
-    public int countAllFreeRecipes() {
-        return recipeDao.countAllFreeRecipes();
-    }
-
-    public int countAllRecipes() {
-        return recipeDao.countAllRecipes();
-    }
-
-    public int countAllRecipesByUserId(int userId) {
-        return recipeDao.countAllRecipesByUserId(userId);
-    }
-
-    public int countAllFreeRecipesByCategoryId(int categoryId) {
-        return recipeDao.countAllFreeRecipesByCategoryId(categoryId);
-    }
-
-    public int countAllRecipesByCategoryId(int categoryId) {
-        return recipeDao.countAllRecipesByCategoryId(categoryId);
-    }
-
-    public int countAllFreeRecipesByAreaId(int areaId) {
-        return recipeDao.countAllFreeRecipesByAreaId(areaId);
-    }
-
-    public int countAllRecipesByAreaId(int areaId) {
-        return recipeDao.countAllRecipesByAreaId(areaId);
-    }
-
-    private void validateRecipeRequest(RecipeRequest recipeRequest) {
-        if (!categoryDao.existsByName(recipeRequest.getCategory())) {
-            throw new NotFoundException("Category does not exist");
-        }
-        if (!areaDao.existsByName(recipeRequest.getArea())) {
-            throw new NotFoundException("Area does not exist");
-        }
-        String accessType = recipeRequest.getAccessType();
-        if (!String.valueOf(AccessType.FREE).equalsIgnoreCase(accessType) &&
-            !String.valueOf(AccessType.PAID).equalsIgnoreCase(accessType)) {
-            throw new NotFoundException("Invalid access type");
-        }
-        if (!userDao.existsById(recipeRequest.getRecipedBy())) {
-            throw new NotFoundException("User does not exist");
-        }
-    }
-
-    private Recipe mapRequestToRecipe(RecipeRequest request) {
-        Recipe recipe = new Recipe();
-        recipe.setName(request.getName());
-        recipe.setCategory(request.getCategory());
-        recipe.setArea(request.getArea());
-        recipe.setInstructions(request.getInstructions());
-        recipe.setImage(request.getImage());
-        recipe.setIngredients(request.getIngredients());
-        recipe.setPublishedOn(new Date(System.currentTimeMillis()));
-        recipe.setRecipedBy(request.getRecipedBy());
-        recipe.setPrepareTime(request.getPrepareTime());
-        recipe.setCookingTime(request.getCookingTime());
-        recipe.setYield(request.getYield());
-        recipe.setShortDescription(request.getShortDescription());
-        recipe.setAccessType(request.getAccessType());
-        return recipe;
-    }
-
-    private RecipeResponse mapRecipeToResponse(Recipe recipe) {
-        String imageUrl = "http://localhost:8080/JamesThewWebApplication/api/images/recipes/" + recipe.getImage();
-
-        String detailedInstructionImageUrl = "http://localhost:8080/JamesThewWebApplication/api/images/instructions/";
-
-        // Add image URL to each detailed instruction
-        List<DetailedInstructions> updatedDetailedInstructions = detailedInstructionsDao.getDetailedInstructionsByRecipeId(recipe.getId())
-                .stream()
-                .peek(instruction -> {
-                    if (instruction.getImage() != null) {
-                        instruction.setImage(detailedInstructionImageUrl + instruction.getImage());
-                    }
-                })
-                .toList();
-
-        return new RecipeResponse(
-                recipe.getId(),
-                recipe.getName(),
-                recipe.getCategory(),
-                recipe.getArea(),
-                recipe.getInstructions(),
-                imageUrl,
-                recipe.getIngredients(),
-                recipe.getPublishedOn(),
-                recipe.getRecipedBy(),
-                recipe.getPrepareTime(),
-                recipe.getCookingTime(),
-                recipe.getYield(),
-                recipe.getShortDescription(),
-                recipe.getAccessType(),
-                commentDao.getCommentsByRecipeId(recipe.getId()),
-                nutritionDao.getNutritionByRecipeId(recipe.getId()),
-                updatedDetailedInstructions
-        );
-    }
+        /**
+         * Counts all recipes by area ID.
+         *
+         * @param area the area
+         * @return the count of recipes in the area
+         */
+        int countAllRecipesByArea(String area);
 }

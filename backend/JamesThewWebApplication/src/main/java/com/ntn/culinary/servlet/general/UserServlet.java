@@ -2,14 +2,11 @@ package com.ntn.culinary.servlet.general;
 
 import com.ntn.culinary.dao.UserDao;
 import com.ntn.culinary.dao.impl.UserDaoImpl;
-import com.ntn.culinary.exception.ForbiddenException;
 import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.UserRequest;
-import com.ntn.culinary.utils.ValidationUtils;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.UserService;
-import com.ntn.culinary.utils.CastUtils;
-import com.ntn.culinary.utils.ResponseUtils;
+import com.ntn.culinary.service.impl.UserServiceImpl;
 import com.ntn.culinary.validator.UpdateUserRequestValidator;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -18,10 +15,9 @@ import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.Part;
-import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/protected/general/users")
@@ -31,7 +27,7 @@ public class UserServlet extends HttpServlet {
 
     public UserServlet() {
         UserDao userDao = new UserDaoImpl();
-        this.userService = new UserService(userDao);
+        this.userService = new UserServiceImpl(userDao);
     }
 
     @Override
@@ -64,12 +60,12 @@ public class UserServlet extends HttpServlet {
             }
 
             userService.updateGeneralUser(userRequest);
-            sendResponse(resp, new ApiResponse<>(200, "User updated successfully", null));
+            sendResponse(resp, success(200, "User updated successfully", null));
 
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(400, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

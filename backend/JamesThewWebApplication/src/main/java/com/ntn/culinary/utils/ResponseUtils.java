@@ -16,6 +16,5 @@ public class ResponseUtils {
         } catch (IOException e) {
             throw new RuntimeException("IOException occurred while writing response", e);
         }
-
     }
 }

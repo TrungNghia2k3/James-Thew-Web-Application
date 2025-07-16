@@ -1,4 +1,4 @@
-package com.ntn.culinary.servlet.admin;
+package com.ntn.culinary.servlet.staff;
 
 import com.google.gson.JsonSyntaxException;
 import com.ntn.culinary.dao.ContestDao;
@@ -8,11 +8,10 @@ import com.ntn.culinary.dao.impl.ContestImagesDaoImpl;
 import com.ntn.culinary.exception.ConflictException;
 import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.exception.ValidationException;
-import com.ntn.culinary.model.ContestImages;
 import com.ntn.culinary.request.ContestImagesRequest;
 import com.ntn.culinary.request.ContestRequest;
-import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.ContestService;
+import com.ntn.culinary.service.impl.ContestServiceImpl;
 import com.ntn.culinary.validator.ContestRequestValidator;
 
 import javax.servlet.ServletException;
@@ -27,9 +26,10 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
-@WebServlet("/api/protected/admin/contests")
+@WebServlet("/api/protected/staff/contests")
 public class ContestServlet extends HttpServlet {
 
     private final ContestService contestService;
@@ -37,7 +37,7 @@ public class ContestServlet extends HttpServlet {
     public ContestServlet() {
         ContestDao contestDao = new ContestDaoImpl();
         ContestImagesDao contestImagesDao = new ContestImagesDaoImpl();
-        this.contestService = new ContestService(contestDao, contestImagesDao);
+        this.contestService = new ContestServiceImpl(contestDao, contestImagesDao);
     }
 
     @Override
@@ -76,20 +76,19 @@ public class ContestServlet extends HttpServlet {
 
             // Add the contest
             contestService.addContest(contestRequest);
-            sendResponse(resp, new ApiResponse<>(201, "Contest created successfully"));
-
+            sendResponse(resp, success(201, "Contest created successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -113,7 +112,8 @@ public class ContestServlet extends HttpServlet {
             if (id > 0 && status) {
                 // Cập nhật trạng thái cuộc thi
                 contestService.updateContestStatus(id);
-                sendResponse(resp, new ApiResponse<>(200, "Contest status updated successfully"));
+                sendResponse(resp, success(200, "Contest status updated successfully"));
+                return;
             }
 
             // Nếu chỉ tồn tại id
@@ -150,22 +150,22 @@ public class ContestServlet extends HttpServlet {
 
                 // Update the contest
                 contestService.updateContest(contestRequest);
-                sendResponse(resp, new ApiResponse<>(200, "Contest updated successfully"));
+                sendResponse(resp, error(200, "Contest updated successfully"));
             }
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -183,16 +183,16 @@ public class ContestServlet extends HttpServlet {
 
             // Xóa cuộc thi
             contestService.deleteContest(id);
-            sendResponse(resp, new ApiResponse<>(200, "Contest deleted successfully"));
+            sendResponse(resp, success(200, "Contest deleted successfully"));
 
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 

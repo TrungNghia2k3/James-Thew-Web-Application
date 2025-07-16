@@ -128,4 +128,21 @@ public class ContestEntryInstructionsDaoImpl implements ContestEntryInstructions
             throw new RuntimeException("Error updating contest entry instructions", e);
         }
     }
+
+    @Override
+    public void deleteContestEntryInstructionById(int id) {
+        String DELETE_CONTEST_ENTRY_INSTRUCTION_QUERY = """
+                DELETE FROM contest_entry_instructions
+                WHERE id = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(DELETE_CONTEST_ENTRY_INSTRUCTION_QUERY)) {
+
+            stmt.setInt(1, id);
+            stmt.executeUpdate();
+        } catch (SQLException e) {
+            throw new RuntimeException("Error deleting contest entry instruction", e);
+        }
+    }
 }

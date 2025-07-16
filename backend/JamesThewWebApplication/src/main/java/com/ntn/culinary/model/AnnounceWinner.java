@@ -15,6 +15,13 @@ public class AnnounceWinner {
         this.ranking = ranking;
     }
 
+    public AnnounceWinner(int id, int announcementId, int contestEntryId, String ranking) {
+        this.id = id;
+        this.announcementId = announcementId;
+        this.contestEntryId = contestEntryId;
+        this.ranking = ranking;
+    }
+
     public int getId() {
         return id;
     }

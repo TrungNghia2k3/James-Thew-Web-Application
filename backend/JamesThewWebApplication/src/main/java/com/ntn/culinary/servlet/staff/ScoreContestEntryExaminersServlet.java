@@ -14,6 +14,7 @@ import com.ntn.culinary.model.ContestEntryExaminers;
 import com.ntn.culinary.request.ContestEntryExaminersRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.ContestEntryExaminersService;
+import com.ntn.culinary.service.impl.ContestEntryExaminersServiceImpl;
 import com.ntn.culinary.utils.GsonUtils;
 import com.ntn.culinary.validator.ContestEntryExaminersRequestValidator;
 
@@ -25,6 +26,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
@@ -37,7 +39,7 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
         ContestEntryDao contestEntryDao = new ContestEntryDaoImpl();
         ContestEntryExaminersDao contestEntryExaminersDao = new ContestEntryExaminersDaoImpl();
         UserDao userDao = new UserDaoImpl();
-        this.contestEntryExaminersService = new ContestEntryExaminersService(contestEntryDao, contestEntryExaminersDao, userDao);
+        this.contestEntryExaminersService = new ContestEntryExaminersServiceImpl(contestEntryDao, contestEntryExaminersDao, userDao);
     }
 
     @Override
@@ -53,7 +55,7 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
                 if (examiner == null) {
                     throw new NotFoundException("Contest entry examiner not found with id: " + id);
                 }
-                sendResponse(resp, new ApiResponse<>(200, "Contest entry examiner fetched successfully", examiner));
+                sendResponse(resp, success(200, "Contest entry examiner fetched successfully", examiner));
 
             } else if (contestEntryIdParam != null) {
                 int contestEntryId = Integer.parseInt(contestEntryIdParam);
@@ -61,7 +63,7 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
                 if (contestEntryExaminers == null || contestEntryExaminers.isEmpty()) {
                     throw new NotFoundException("No contest entry examiners found for contest entry");
                 }
-                sendResponse(resp, new ApiResponse<>(200, "Contest entry examiners fetched successfully", contestEntryExaminers));
+                sendResponse(resp, success(200, "Contest entry examiners fetched successfully", contestEntryExaminers));
 
             } else if (examinerIdParam != null) {
                 int examinerId = Integer.parseInt(examinerIdParam);
@@ -69,18 +71,16 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
                 if (contestEntryExaminers == null || contestEntryExaminers.isEmpty()) {
                     throw new NotFoundException("No contest entry examiners found for examiner");
                 }
-                sendResponse(resp, new ApiResponse<>(200, "Contest entry examiners fetched successfully", contestEntryExaminers));
-
+                sendResponse(resp, success(200, "Contest entry examiners fetched successfully", contestEntryExaminers));
             } else {
                 throw new NotFoundException("No valid parameters provided");
             }
-
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -101,19 +101,19 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
             }
 
             contestEntryExaminersService.addExaminer(contestEntryExaminersRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Contest entry examiners added successfully"));
+            sendResponse(resp, success(200, "Contest entry examiners added successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -134,19 +134,19 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
             }
 
             contestEntryExaminersService.updateExaminer(contestEntryExaminersRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Contest entry examiner updated successfully"));
+            sendResponse(resp, success(200, "Contest entry examiner updated successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -164,13 +164,13 @@ public class ScoreContestEntryExaminersServlet extends HttpServlet {
             int examinerId = Integer.parseInt(examinerIdParam);
 
             contestEntryExaminersService.deleteExaminer(contestEntryId, examinerId);
-            sendResponse(resp, new ApiResponse<>(200, "Contest entry examiner deleted successfully"));
+            sendResponse(resp, success(200, "Contest entry examiner deleted successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

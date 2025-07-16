@@ -7,6 +7,10 @@ import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
 import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
@@ -164,5 +168,47 @@ public class NutritionDaoImpl implements NutritionDao {
         } catch (SQLException e) {
             throw new RuntimeException("SQLException: " + e.getMessage());
         }
+    }
+
+    @Override
+    public Map<Integer, Nutrition> getNutritionByRecipeIds(List<Integer> recipeIds) {
+        Map<Integer, Nutrition> result = new HashMap<>();
+        if (recipeIds == null || recipeIds.isEmpty()) return result;
+
+        StringBuilder query = new StringBuilder("SELECT * FROM nutritions WHERE recipe_id IN (");
+        for (int i = 0; i < recipeIds.size(); i++) {
+            query.append("?");
+            if (i < recipeIds.size() - 1) query.append(", ");
+        }
+        query.append(")");
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query.toString())) {
+
+            for (int i = 0; i < recipeIds.size(); i++) {
+                stmt.setInt(i + 1, recipeIds.get(i));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                Nutrition nutrition = new Nutrition();
+                nutrition.setId(rs.getInt("id"));
+                nutrition.setCalories(rs.getString("calories"));
+                nutrition.setFat(rs.getString("fat"));
+                nutrition.setCholesterol(rs.getString("cholesterol"));
+                nutrition.setSodium(rs.getString("sodium"));
+                nutrition.setCarbohydrate(rs.getString("carbohydrate"));
+                nutrition.setFiber(rs.getString("fiber"));
+                nutrition.setProtein(rs.getString("protein"));
+                nutrition.setRecipeId(rs.getInt("recipe_id"));
+
+                result.put(nutrition.getRecipeId(), nutrition);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching nutrition by recipeIds", e);
+        }
+
+        return result;
     }
 }

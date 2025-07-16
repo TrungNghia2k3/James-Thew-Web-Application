@@ -1,23 +1,17 @@
 package com.ntn.culinary.servlet.admin;
 
 import com.ntn.culinary.dao.PermissionDao;
-import com.ntn.culinary.dao.RoleDao;
 import com.ntn.culinary.dao.StaffPermissionsDao;
-import com.ntn.culinary.dao.UserRolesDao;
 import com.ntn.culinary.dao.impl.PermissionDaoImpl;
-import com.ntn.culinary.dao.impl.RoleDaoImpl;
 import com.ntn.culinary.dao.impl.StaffPermissionsDaoImpl;
-import com.ntn.culinary.dao.impl.UserRolesDaoImpl;
 import com.ntn.culinary.exception.ConflictException;
 import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.PermissionRequest;
-import com.ntn.culinary.request.RoleRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.PermissionResponse;
-import com.ntn.culinary.response.RoleResponse;
 import com.ntn.culinary.service.PermissionService;
-import com.ntn.culinary.service.RoleService;
+import com.ntn.culinary.service.impl.PermissionServiceImpl;
 import com.ntn.culinary.validator.PermissionRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
@@ -27,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -40,7 +35,7 @@ public class PermissionServlet extends HttpServlet {
         PermissionDao permissionDao = new PermissionDaoImpl(); // Assuming RoleDao is implemented
         StaffPermissionsDao staffPermissionsDao = new StaffPermissionsDaoImpl() {
         }; // Assuming UserRolesDao is implemented
-        this.permissionService = new PermissionService(staffPermissionsDao, permissionDao);
+        this.permissionService = new PermissionServiceImpl(staffPermissionsDao, permissionDao);
     }
 
     @Override
@@ -54,23 +49,22 @@ public class PermissionServlet extends HttpServlet {
                 int id = Integer.parseInt(idParam);
                 // Lấy thông tin permission theo ID
                 PermissionResponse permission = permissionService.getPermissionById(id);
-                sendResponse(resp, new ApiResponse<>(200, "Permission fetched successfully", permission));
+                sendResponse(resp, success(200, "Permission fetched successfully", permission));
             } else if (nameParam != null) {
                 // Lấy thông tin permission theo tên
                 PermissionResponse permission = permissionService.getPermissionByName(nameParam);
-                sendResponse(resp, new ApiResponse<>(200, "Permission fetched successfully", permission));
+                sendResponse(resp, success(200, "Permission fetched successfully", permission));
             } else {
                 // Trả về danh sách tất cả các permission
                 List<PermissionResponse> permissions = permissionService.getAllPermissions();
-                sendResponse(resp, new ApiResponse<>(200, "All permissions fetched successfully", permissions));
+                sendResponse(resp, success(200, "All permissions fetched successfully", permissions));
             }
-
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -91,11 +85,15 @@ public class PermissionServlet extends HttpServlet {
             }
 
             permissionService.addPermission(permissionRequest);
-            sendResponse(resp, new ApiResponse<>(201, "Permission added successfully"));
-        } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, success(201, "Permission added successfully"));
+        }catch (ConflictException e) {
+            sendResponse(resp, error(409, e.getMessage()));
+        } catch (NotFoundException e) {
+            sendResponse(resp, error(404, e.getMessage()));
+        } catch (ValidationException e) {
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -116,15 +114,15 @@ public class PermissionServlet extends HttpServlet {
             }
 
             permissionService.updatePermission(permissionRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Permission updated successfully"));
+            sendResponse(resp, success(200, "Permission updated successfully"));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -139,15 +137,15 @@ public class PermissionServlet extends HttpServlet {
 
             int id = Integer.parseInt(idParam);
             permissionService.deletePermissionById(id);
-            sendResponse(resp, new ApiResponse<>(200, "Permission deleted successfully"));
+            sendResponse(resp, success(200, "Permission deleted successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

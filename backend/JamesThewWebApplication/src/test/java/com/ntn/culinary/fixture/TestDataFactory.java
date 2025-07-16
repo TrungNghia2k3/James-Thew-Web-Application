@@ -3,6 +3,7 @@ package com.ntn.culinary.fixture;
 import com.ntn.culinary.model.*;
 import com.ntn.culinary.request.AnnouncementRequest;
 import com.ntn.culinary.request.ContestEntryRequest;
+import com.ntn.culinary.response.RecipeResponse;
 
 import java.sql.Date;
 import java.sql.Timestamp;
@@ -195,5 +196,64 @@ public class TestDataFactory {
         request.setYield("2 servings");
         return request;
     }
+
+    public static List<Recipe> createRecipeList() {
+        Recipe recipe = new Recipe();
+        recipe.setId(1);
+        recipe.setName("Pho Bo");
+        recipe.setCategory("Vietnamese");
+        recipe.setArea("Asia");
+        recipe.setInstructions("Cook it well.");
+        recipe.setImage("pho.jpg");
+        recipe.setIngredients("Beef, noodle");
+        recipe.setPublishedOn(Date.valueOf("2023-01-01"));
+        recipe.setRecipedBy(123);
+        recipe.setPrepareTime("10");
+        recipe.setCookingTime("30");
+        recipe.setYield("2");
+        recipe.setShortDescription("Delicious beef noodle soup.");
+        recipe.setAccessType("FREE");
+        return List.of(recipe);
+    }
+
+    public static List<Comment> createCommentList() {
+        Comment comment = new Comment();
+        comment.setId(1);
+        comment.setRecipeId(1);
+        comment.setContent("Great recipe!");
+        comment.setDate(Timestamp.valueOf(LocalDateTime.now()));
+        return List.of(comment);
+    }
+
+    public static Nutrition createNutrition() {
+        Nutrition nutrition = new Nutrition();
+        nutrition.setId(1);
+        nutrition.setRecipeId(1);
+        nutrition.setCalories("Calories");
+        nutrition.setCarbohydrate("500");
+        nutrition.setProtein("500");
+        return nutrition;
+    }
+
+    public static List<Nutrition> createNutritionList() {
+        Nutrition nutrition = new Nutrition();
+        nutrition.setId(1);
+        nutrition.setRecipeId(1);
+        nutrition.setCalories("Calories");
+        nutrition.setCarbohydrate("500");
+        nutrition.setProtein("500");
+        return List.of(nutrition);
+    }
+
+    public static List<DetailedInstructions> createInstructions() {
+        DetailedInstructions ins = new DetailedInstructions();
+        ins.setId(1);
+        ins.setRecipeId(1);
+        ins.setName("Boil Beef");
+        ins.setText("Boil the beef.");
+        ins.setImage("step1.jpg");
+        return List.of(ins);
+    }
+
 }
 

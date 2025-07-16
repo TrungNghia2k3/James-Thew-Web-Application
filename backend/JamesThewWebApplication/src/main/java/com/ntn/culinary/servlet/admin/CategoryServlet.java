@@ -2,14 +2,12 @@ package com.ntn.culinary.servlet.admin;
 
 import com.ntn.culinary.dao.CategoryDao;
 import com.ntn.culinary.dao.impl.CategoryDaoImpl;
-import com.ntn.culinary.exception.ForbiddenException;
 import com.ntn.culinary.exception.NotFoundException;
-import com.ntn.culinary.exception.ValidationException;
-import com.ntn.culinary.model.Category;
 import com.ntn.culinary.request.CategoryRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.CategoryResponse;
 import com.ntn.culinary.service.CategoryService;
+import com.ntn.culinary.service.impl.CategoryServiceImpl;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -18,7 +16,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.List;
 
-import static com.ntn.culinary.utils.CastUtils.toStringList;
+import static com.ntn.culinary.response.ApiResponse.error;
+import static com.ntn.culinary.response.ApiResponse.success;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -30,7 +29,7 @@ public class CategoryServlet extends HttpServlet {
 
     public CategoryServlet() {
         CategoryDao categoryDao = new CategoryDaoImpl();
-        this.categoryService = new CategoryService(categoryDao);
+        this.categoryService = new CategoryServiceImpl(categoryDao);
     }
 
     @Override
@@ -44,24 +43,24 @@ public class CategoryServlet extends HttpServlet {
             if (idParam != null) {
                 int id = Integer.parseInt(idParam);
                 CategoryResponse category = categoryService.getCategoryById(id);
-                sendResponse(resp, new ApiResponse<>(200, "Category fetched successfully", category));
+                sendResponse(resp, success(200, "Category fetched successfully", category));
             } else if (nameParam != null) {
                 CategoryResponse category = categoryService.getCategoryByName(nameParam);
                 if (category == null) {
                     throw new NotFoundException("Category not found with name: " + nameParam);
                 }
-                sendResponse(resp, new ApiResponse<>(200, "Category fetched successfully", category));
+                sendResponse(resp, success(200, "Category fetched successfully", category));
+            } else {
+                // If no ID or name provided, return all categories
+                List<CategoryResponse> categories = categoryService.getAllCategories();
+                sendResponse(resp, success(200, "All categories fetched successfully", categories));
             }
-
-            // If no ID or name provided, return all categories
-            List<CategoryResponse> categories = categoryService.getAllCategories();
-            sendResponse(resp, new ApiResponse<>(200, "All categories fetched successfully", categories));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -80,13 +79,13 @@ public class CategoryServlet extends HttpServlet {
             }
 
             categoryService.addCategory(categoryRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Category created successfully"));
+            sendResponse(resp, success(200, "Category created successfully"));
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -105,15 +104,15 @@ public class CategoryServlet extends HttpServlet {
             }
 
             categoryService.updateCategory(categoryRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Category updated successfully"));
+            sendResponse(resp, success(200, "Category updated successfully"));
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -127,15 +126,15 @@ public class CategoryServlet extends HttpServlet {
 
             int id = Integer.parseInt(idParam);
             categoryService.deleteCategory(id);
-            sendResponse(resp, new ApiResponse<>(200, "Category deleted successfully"));
+            sendResponse(resp, success(200, "Category deleted successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid category ID format"));
+            sendResponse(resp, error(400, "Invalid category ID format"));
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

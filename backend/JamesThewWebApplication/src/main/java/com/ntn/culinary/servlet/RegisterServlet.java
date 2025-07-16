@@ -7,18 +7,17 @@ import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.RegisterRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.UserService;
-import com.ntn.culinary.utils.GsonUtils;
-import com.ntn.culinary.utils.ResponseUtils;
+import com.ntn.culinary.service.impl.UserServiceImpl;
 import com.ntn.culinary.validator.RegisterRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.BufferedReader;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -29,7 +28,7 @@ public class RegisterServlet extends HttpServlet {
 
     public RegisterServlet() {
         UserDao userDao = new UserDaoImpl();
-        this.userService = new UserService(userDao);
+        this.userService = new UserServiceImpl(userDao);
     }
 
     @Override
@@ -48,16 +47,15 @@ public class RegisterServlet extends HttpServlet {
             }
 
             userService.register(userRequest);
-            sendResponse(resp, new ApiResponse<>(201, "User created successfully", null));
-
+            sendResponse(resp, success(201, "User created successfully", null));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(400, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

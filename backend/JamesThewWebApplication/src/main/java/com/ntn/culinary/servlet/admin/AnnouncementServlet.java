@@ -17,6 +17,7 @@ import com.ntn.culinary.request.AnnouncementRequest;
 import com.ntn.culinary.response.AnnouncementResponse;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.AnnouncementService;
+import com.ntn.culinary.service.impl.AnnouncementServiceImpl;
 import com.ntn.culinary.validator.AnnouncementRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
@@ -27,7 +28,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
-import static com.ntn.culinary.utils.CastUtils.toStringList;
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -43,7 +44,7 @@ public class AnnouncementServlet extends HttpServlet {
         AnnounceWinnerDao announceWinnerDao = new AnnounceWinnerDaoImpl();
         ContestEntryDao contestEntryDao = new ContestEntryDaoImpl();
 
-        this.announcementService = new AnnouncementService(contestDao, announcementDao, announceWinnerDao, contestEntryDao);
+        this.announcementService = new AnnouncementServiceImpl(contestDao, announcementDao, announceWinnerDao, contestEntryDao);
     }
 
     // Xem thông tin thông báo, có thể lọc theo ID, có thể lấy tất cả thông báo, chỉnh sửa thông báo, xóa thông báo
@@ -53,24 +54,25 @@ public class AnnouncementServlet extends HttpServlet {
         try {
             // Get announcement ID from request parameters
             String idParam = req.getParameter("id");
-            if (idParam != null && !idParam.isEmpty()) {
+
+            if (idParam != null) {
                 int announcementId = Integer.parseInt(idParam);
                 AnnouncementResponse announcement = announcementService.getAnnouncementById(announcementId);
-                sendResponse(resp, new ApiResponse<>(200, "Announcement found", announcement));
-            }
-
-            List<AnnouncementResponse> announcements = announcementService.getAllAnnouncements();
-            if (announcements.isEmpty()) {
-                sendResponse(resp, new ApiResponse<>(404, "No announcements found"));
+                sendResponse(resp, success(200, "Announcement found", announcement));
             } else {
-                sendResponse(resp, new ApiResponse<>(200, "Announcements fetched successfully", announcements));
+                List<AnnouncementResponse> announcements = announcementService.getAllAnnouncements();
+                if (announcements.isEmpty()) {
+                    sendResponse(resp, error(404, "No announcements found"));
+                } else {
+                    sendResponse(resp, success(200, "Announcements fetched successfully", announcements));
+                }
             }
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid announcement ID format"));
+            sendResponse(resp, error(400, "Invalid announcement ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -85,25 +87,25 @@ public class AnnouncementServlet extends HttpServlet {
 
             // Validate input
             AnnouncementRequestValidator validator = new AnnouncementRequestValidator();
-            Map<String, String> errors = validator.validate(announcementRequest);
+            Map<String, String> errors = validator.validate(announcementRequest, false);
             if (!errors.isEmpty()) {
                 throw new ValidationException("Validation failed", errors);
             }
 
             announcementService.addAnnouncement(announcementRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Announcement created successfully"));
+            sendResponse(resp, success(200, "Announcement created successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -118,28 +120,28 @@ public class AnnouncementServlet extends HttpServlet {
 
             // Validate input
             AnnouncementRequestValidator validator = new AnnouncementRequestValidator();
-            Map<String, String> errors = validator.validate(announcementRequest);
+            Map<String, String> errors = validator.validate(announcementRequest, true);
             if (!errors.isEmpty()) {
                 throw new ValidationException("Validation failed", errors);
             }
 
             // Update the announcement
             announcementService.updateAnnouncement(announcementRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Announcement updated successfully"));
+            sendResponse(resp, success(200, "Announcement updated successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (ForbiddenException e) {
-            sendResponse(resp, new ApiResponse<>(403, e.getMessage()));
+            sendResponse(resp, error(403, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -156,15 +158,15 @@ public class AnnouncementServlet extends HttpServlet {
 
             // Delete the announcement
             announcementService.deleteAnnouncement(announcementId);
-            sendResponse(resp, new ApiResponse<>(200, "Announcement deleted successfully"));
+            sendResponse(resp, success(200, "Announcement deleted successfully"));
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request: " + e.getMessage()));
+            sendResponse(resp, error(400, "Invalid request: " + e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ForbiddenException e) {
-            sendResponse(resp, new ApiResponse<>(403, e.getMessage()));
+            sendResponse(resp, error(403, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

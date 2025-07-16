@@ -11,6 +11,14 @@ public class ContestEntryInstruction {
     public ContestEntryInstruction() {
     }
 
+    public ContestEntryInstruction(int contestEntryId, int stepNumber, String name, String text, String image) {
+        this.contestEntryId = contestEntryId;
+        this.stepNumber = stepNumber;
+        this.name = name;
+        this.text = text;
+        this.image = image;
+    }
+
     public ContestEntryInstruction(int id, int contestEntryId, int stepNumber, String name, String text, String image) {
         this.id = id;
         this.contestEntryId = contestEntryId;

@@ -90,7 +90,7 @@ public class AnnounceWinnerDaoImpl implements AnnounceWinnerDao {
             try (ResultSet rs = stmt.executeQuery()) {
                 while (rs.next()) {
                     AnnounceWinner winner = new AnnounceWinner();
-                    winner.setAnnouncementId(rs.getInt("announcement_id"));
+                    winner.setId(rs.getInt("id"));
                     winner.setContestEntryId(rs.getInt("contest_entry_id"));
                     winner.setRanking(rs.getString("ranking"));
                     winners.add(winner);

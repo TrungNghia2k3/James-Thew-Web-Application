@@ -7,6 +7,8 @@ import com.ntn.culinary.exception.UnauthorizedException;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.JwtService;
 import com.ntn.culinary.service.UserService;
+import com.ntn.culinary.service.impl.JwtServiceImpl;
+import com.ntn.culinary.service.impl.UserServiceImpl;
 import com.ntn.culinary.utils.ResponseUtils;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.ExpiredJwtException;
@@ -19,12 +21,13 @@ import javax.servlet.ServletResponse;
 import javax.servlet.annotation.WebFilter;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import java.io.IOException;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.stream.Collectors;
+
+import static com.ntn.culinary.response.ApiResponse.error;
 
 @WebFilter(urlPatterns = "/api/protected/*")
 public class JwtFilter implements Filter {
@@ -34,8 +37,8 @@ public class JwtFilter implements Filter {
 
     public JwtFilter() {
         UserDao userDao = new UserDaoImpl();
-        this.jwtService = new JwtService();
-        this.userService = new UserService(userDao);
+        this.jwtService = new JwtServiceImpl();
+        this.userService = new UserServiceImpl(userDao);
     }
 
     @Override
@@ -79,7 +82,7 @@ public class JwtFilter implements Filter {
 //            if (roles.contains("MEMBER")) {
 //                boolean isSubscriptionValid = userService.isSubscriptionValid(userId);
 //                if (!isSubscriptionValid) {
-//                    ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Subscription expired or user not found"));
+//                    ResponseUtil.sendResponse(response, error(403, "Subscription expired or user not found"));
 //                    return;
 //                }
 //            }
@@ -105,29 +108,29 @@ public class JwtFilter implements Filter {
 
             // (Optional) Nếu muốn kiểm tra permission:
             // if (!jwtService.hasPermission(claims, "MANAGE_CONTESTS")) {
-            //     ResponseUtil.sendResponse(response, new ApiResponse<>(403, "Permission denied"));
+            //     ResponseUtil.sendResponse(response, error(403, "Permission denied"));
             //     return;
             // }
 
             chain.doFilter(req, res);
         } catch (UnauthorizedException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: " + e.getMessage()));
+            ResponseUtils.sendResponse(response, error(401, "Unauthorized: " + e.getMessage()));
         } catch (ExpiredJwtException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: token expired"));
+            ResponseUtils.sendResponse(response, error(401, "Unauthorized: token expired"));
         } catch (JwtException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(401, "Unauthorized: invalid token"));
+            ResponseUtils.sendResponse(response, error(401, "Unauthorized: invalid token"));
         } catch (ForbiddenException e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(403, e.getMessage()));
+            ResponseUtils.sendResponse(response, error(403, e.getMessage()));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(response, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(response, error(500, "Server error: " + e.getMessage()));
         }
     }
 
     private static final Map<String, String> PERMISSION_MAP = Map.of(
-            "/api/protected/staff/secure-resource-2", "MANAGE_CONTESTS",
-            "/api/protected/staff/another-sensitive-api", "EDIT_USERS",
+            "/api/protected/staff/contests", "MANAGE_CONTESTS",
+            "/api/protected/staff/users", "MANAGE_USERS",
             "/api/protected/staff/contest-entries","MANAGE_CONTEST_ENTRIES",
-            "/api/protected/staff/score-contest-entry-examiners", "SCORE_CONTEST_ENTRIES",
+            "/api/protected/staff/score-contest-entry-examiners", "MANAGE_SCORE_CONTEST_ENTRIES",
             "/api/protected/staff/comments","MANAGE_COMMENTS"
     );
 }

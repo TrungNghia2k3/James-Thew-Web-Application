@@ -12,6 +12,7 @@ import com.ntn.culinary.model.Contest;
 import com.ntn.culinary.model.ContestEntry;
 import com.ntn.culinary.request.AnnouncementRequest;
 import com.ntn.culinary.response.AnnouncementResponse;
+import com.ntn.culinary.service.impl.AnnouncementServiceImpl;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -28,7 +29,7 @@ import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class AnnouncementServiceTest {
+class AnnouncementServiceImplTest {
 
     @Mock
     private ContestDao contestDao;
@@ -43,7 +44,7 @@ class AnnouncementServiceTest {
     private ContestEntryDao contestEntryDao;
 
     @InjectMocks
-    private AnnouncementService announcementService;
+    private AnnouncementServiceImpl announcementService;
 
     @Test
     void getAllAnnouncements_WhenAnnouncementsExist_ReturnsAnnouncementResponses() {

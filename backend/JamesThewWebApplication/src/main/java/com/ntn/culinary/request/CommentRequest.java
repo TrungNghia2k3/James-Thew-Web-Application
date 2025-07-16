@@ -9,19 +9,17 @@ public class CommentRequest {
     private String content;
     private Date date;
     private int rating;
-    private boolean isBanned;
 
     public CommentRequest() {
     }
 
-    public CommentRequest(int id, int userId, int recipeId, String content, Date date, int rating, boolean isBanned) {
+    public CommentRequest(int id, int userId, int recipeId, String content, Date date, int rating){
         this.id = id;
         this.userId = userId;
         this.recipeId = recipeId;
         this.content = content;
         this.date = date;
         this.rating = rating;
-        this.isBanned = isBanned;
     }
 
     public int getId() {
@@ -70,13 +68,5 @@ public class CommentRequest {
 
     public void setRating(int rating) {
         this.rating = rating;
-    }
-
-    public boolean isBanned() {
-        return isBanned;
-    }
-
-    public void setBanned(boolean banned) {
-        isBanned = banned;
     }
 }

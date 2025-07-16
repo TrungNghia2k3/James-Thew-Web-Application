@@ -15,4 +15,5 @@ public interface ContestEntryInstructionsDao {
 
     void updateContestEntryInstructions(ContestEntryInstruction contestEntryInstruction);
 
+    void deleteContestEntryInstructionById(int id);
 }

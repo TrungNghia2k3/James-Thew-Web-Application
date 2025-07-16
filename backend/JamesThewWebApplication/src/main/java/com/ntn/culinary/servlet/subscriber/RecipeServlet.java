@@ -6,10 +6,10 @@ import com.ntn.culinary.dao.impl.*;
 import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.RecipeRequest;
-import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.RecipePageResponse;
 import com.ntn.culinary.response.RecipeResponse;
 import com.ntn.culinary.service.RecipeService;
+import com.ntn.culinary.service.impl.RecipeServiceImpl;
 import com.ntn.culinary.validator.RecipeRequestValidator;
 
 import javax.servlet.annotation.MultipartConfig;
@@ -23,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/protected/subscriber/recipes")
@@ -38,7 +39,7 @@ public class RecipeServlet extends HttpServlet {
         DetailedInstructionsDao detailedInstructionsDao = new DetailedInstructionsDaoImpl();
         CommentDao commentDao = new CommentDaoImpl();
         NutritionDao nutritionDao = new NutritionDaoImpl();
-        this.recipeService = new RecipeService(recipeDao, categoryDao, areaDao, userDao, detailedInstructionsDao, commentDao, nutritionDao);
+        this.recipeService = new RecipeServiceImpl(recipeDao, categoryDao, areaDao, userDao, detailedInstructionsDao, commentDao, nutritionDao);
     }
 
     @Override
@@ -64,23 +65,21 @@ public class RecipeServlet extends HttpServlet {
             if (idParam != null) {
                 int id = Integer.parseInt(idParam);
                 RecipeResponse recipe = recipeService.getRecipeById(id);
-                sendResponse(resp, new ApiResponse<>(200, "Recipe found", recipe));
+                sendResponse(resp, success(200, "Recipe found", recipe));
             } else if (areaParam != null) {
                 // Fetch recipes by area with pagination
-                int areaId = Integer.parseInt(areaParam);
-                List<RecipeResponse> recipes = recipeService.getAllRecipesByAreaId(areaId, page, size);
-                int totalItems = recipeService.countAllRecipesByAreaId(areaId);
+                List<RecipeResponse> recipes = recipeService.getAllRecipesByArea(areaParam, page, size);
+                int totalItems = recipeService.countAllRecipesByArea(areaParam);
                 int totalPages = (int) Math.ceil((double) totalItems / size);
                 RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-                sendResponse(resp, new ApiResponse<>(200, "Recipes by area fetched successfully", response));
+                sendResponse(resp, success(200, "Recipes by area fetched successfully", response));
             } else if (categoryParam != null) {
                 // Fetch recipes by category with pagination
-                int categoryId = Integer.parseInt(categoryParam);
-                List<RecipeResponse> recipes = recipeService.getAllRecipesByCategoryId(categoryId, page, size);
-                int totalItems = recipeService.countAllRecipesByCategoryId(categoryId);
+                List<RecipeResponse> recipes = recipeService.getAllRecipesByCategory(categoryParam, page, size);
+                int totalItems = recipeService.countAllRecipesByCategory(categoryParam);
                 int totalPages = (int) Math.ceil((double) totalItems / size);
                 RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-                sendResponse(resp, new ApiResponse<>(200, "Recipes by category fetched successfully", response));
+                sendResponse(resp,success(200, "Recipes by category fetched successfully", response));
             } else if (userIdParam != null) {
                 // Fetch recipes by user with pagination
                 int userId = Integer.parseInt(userIdParam);
@@ -88,160 +87,23 @@ public class RecipeServlet extends HttpServlet {
                 int totalItems = recipeService.countAllRecipesByUserId(userId);
                 int totalPages = (int) Math.ceil((double) totalItems / size);
                 RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-                sendResponse(resp, new ApiResponse<>(200, "Recipes by user fetched successfully", response));
+                sendResponse(resp, success(200, "Recipes by user fetched successfully", response));
             } else {
                 // Fetch recipes with pagination
                 List<RecipeResponse> recipes = recipeService.getAllRecipes(page, size);
                 int totalItems = recipeService.countAllRecipes();
                 int totalPages = (int) Math.ceil((double) totalItems / size);
                 RecipePageResponse response = new RecipePageResponse(recipes, totalItems, page, totalPages);
-                sendResponse(resp, new ApiResponse<>(200, "Free recipes fetched successfully", response));
+                sendResponse(resp, success(200, "Free recipes fetched successfully", response));
             }
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid recipe ID"));
+            sendResponse(resp, error(400, "Invalid recipe ID"));
         } catch (IllegalArgumentException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid pagination parameters: " + e.getMessage()));
+            sendResponse(resp, error(400, "Invalid pagination parameters: " + e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
-        }
-    }
-
-    @Override
-    protected void doPost(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            req.setCharacterEncoding("UTF-8");
-
-            // Lấy dữ liệu form
-            String name = req.getParameter("name");
-            String category = req.getParameter("category");
-            String area = req.getParameter("area");
-            String instructions = req.getParameter("instructions");
-            Part imagePart = req.getPart("image");
-            String ingredients = req.getParameter("ingredients");
-            String publishedOn = req.getParameter("publishedOn");
-            String prepareTime = req.getParameter("prepareTime");
-            String cookingTime = req.getParameter("cookingTime");
-            String yield = req.getParameter("yield");
-            String shortDescription = req.getParameter("shortDescription");
-            String accessType = req.getParameter("accessType");
-            int recipedBy = Integer.parseInt(req.getParameter("recipedBy"));
-
-            // Create RecipeRequest object
-            RecipeRequest recipeRequest = new RecipeRequest();
-            recipeRequest.setName(name);
-            recipeRequest.setCategory(category);
-            recipeRequest.setArea(area);
-            recipeRequest.setInstructions(instructions);
-            recipeRequest.setIngredients(ingredients);
-            recipeRequest.setPublishedOn(new SimpleDateFormat("yyyy-MM-dd").parse(publishedOn));
-            recipeRequest.setRecipedBy(recipedBy);
-            recipeRequest.setPrepareTime(prepareTime);
-            recipeRequest.setCookingTime(cookingTime);
-            recipeRequest.setYield(yield);
-            recipeRequest.setShortDescription(shortDescription);
-            recipeRequest.setAccessType(accessType);
-
-            // Validate input
-            RecipeRequestValidator validator = new RecipeRequestValidator();
-            Map<String, String> errors = validator.validate(recipeRequest, imagePart, false);
-            if (!errors.isEmpty()) {
-                throw new ValidationException("Validation failed", errors);
-            }
-
-            recipeService.addRecipe(recipeRequest, imagePart);
-            sendResponse(resp, new ApiResponse<>(200, "Recipe added successfully"));
-        } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
-        } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
-        } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
-        } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
-        } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
-        }
-    }
-
-    @Override
-    protected void doPut(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            req.setCharacterEncoding("UTF-8");
-
-            // Lấy dữ liệu form
-            String idParam = req.getParameter("id");
-            int id = Integer.parseInt(idParam);
-            String name = req.getParameter("name");
-            String category = req.getParameter("category");
-            String area = req.getParameter("area");
-            String instructions = req.getParameter("instructions");
-            Part imagePart = req.getPart("image");
-            String ingredients = req.getParameter("ingredients");
-            String publishedOn = req.getParameter("publishedOn");
-            String prepareTime = req.getParameter("prepareTime");
-            String cookingTime = req.getParameter("cookingTime");
-            String yield = req.getParameter("yield");
-            String shortDescription = req.getParameter("shortDescription");
-            String accessType = req.getParameter("accessType");
-            int recipedBy = Integer.parseInt(req.getParameter("recipedBy"));
-
-            // Create RecipeRequest object
-            RecipeRequest recipeRequest = new RecipeRequest();
-            recipeRequest.setId(id);
-            recipeRequest.setName(name);
-            recipeRequest.setCategory(category);
-            recipeRequest.setArea(area);
-            recipeRequest.setInstructions(instructions);
-            recipeRequest.setIngredients(ingredients);
-            recipeRequest.setPublishedOn(new SimpleDateFormat("yyyy-MM-dd").parse(publishedOn));
-            recipeRequest.setRecipedBy(recipedBy);
-            recipeRequest.setPrepareTime(prepareTime);
-            recipeRequest.setCookingTime(cookingTime);
-            recipeRequest.setYield(yield);
-            recipeRequest.setShortDescription(shortDescription);
-            recipeRequest.setAccessType(accessType);
-
-            // Validate input
-            RecipeRequestValidator validator = new RecipeRequestValidator();
-            Map<String, String> errors = validator.validate(recipeRequest, imagePart, true);
-            if (!errors.isEmpty()) {
-                throw new ValidationException("Validation failed", errors);
-            }
-
-            recipeService.updateRecipe(recipeRequest, imagePart);
-            sendResponse(resp, new ApiResponse<>(200, "Recipe updated successfully"));
-        } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
-        } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
-        } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
-        } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
-        } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
-        }
-    }
-
-    @Override
-    protected void doDelete(HttpServletRequest req, HttpServletResponse resp) {
-        try {
-            String idParam = req.getParameter("id");
-            if (idParam == null || idParam.isEmpty()) {
-                throw new IllegalArgumentException("Recipe ID is required");
-            }
-
-            int recipeId = Integer.parseInt(idParam);
-            recipeService.deleteRecipe(recipeId);
-            sendResponse(resp, new ApiResponse<>(200, "Recipe deleted successfully"));
-        } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid recipe ID format"));
-        } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
-        } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 

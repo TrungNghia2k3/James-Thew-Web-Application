@@ -2,6 +2,8 @@ package com.ntn.culinary.response;
 
 import com.google.gson.annotations.Expose;
 
+import java.util.Map;
+
 public class ApiResponse<T> {
 
     @Expose
@@ -19,30 +21,39 @@ public class ApiResponse<T> {
     @Expose
     private String error;
 
-    // Default constructor (required by Gson)
-    public ApiResponse() {}
-
-    // Success response
-    public ApiResponse(int status, String message, T data) {
-        this.success = true;
+    // Private constructor để bắt buộc sử dụng factory methods
+    private ApiResponse(boolean success, int status, String message, T data, String error) {
+        this.success = success;
         this.status = status;
         this.message = message;
         this.data = data;
-        this.error = null;
-    }
-
-    // Error response
-    public ApiResponse(int status, String error) {
-        this.success = false;
-        this.status = status;
-        this.message = null;
-        this.data = null;
         this.error = error;
     }
 
-    public ApiResponse(String message, Object error) {
+    // Factory method: Success response with data
+    public static <T> ApiResponse<T> success(int status, String message, T data) {
+        return new ApiResponse<>(true, status, message, data, null);
     }
 
+    // Factory method: Success response without data
+    public static <T> ApiResponse<T> success(int status, String message) {
+        return new ApiResponse<>(true, status, message, null, null);
+    }
+
+    // Factory method: Error response
+    public static <T> ApiResponse<T> error(int status, String error) {
+        return new ApiResponse<>(false, status, null, null, error);
+    }
+
+    // Factory method: Validation error response
+    public static <T> ApiResponse<T> validationError(int status, String message, Map<String, String> errors) {
+        // Ép kiểu Map thành T nếu T được dùng là Map<String, String>
+        @SuppressWarnings("unchecked")
+        T errorData = (T) errors;
+        return new ApiResponse<>(false, status, message, errorData, null);
+    }
+
+    // Getters and Setters
     public boolean isSuccess() {
         return success;
     }
@@ -59,7 +70,9 @@ public class ApiResponse<T> {
         this.status = status;
     }
 
-    public String getMessage() {return message;}
+    public String getMessage() {
+        return message;
+    }
 
     public void setMessage(String message) {
         this.message = message;

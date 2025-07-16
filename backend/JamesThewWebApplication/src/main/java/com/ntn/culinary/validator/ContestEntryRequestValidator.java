@@ -16,7 +16,7 @@ public class ContestEntryRequestValidator {
 
         Map<String, String> errors = new HashMap<>();
 
-        if (!isUpdate && isNotExistId(request.getId())) {
+        if (isUpdate && isNotExistId(request.getId())) {
             errors.put("id", "ID should not be provided for new contest entries");
         }
 

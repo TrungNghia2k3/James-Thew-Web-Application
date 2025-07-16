@@ -1,18 +1,40 @@
 import React from 'react';
+import { Link, useLocation } from 'react-router-dom';
 
 const Header = () => {
+    const location = useLocation();
+
     return (
-        <header className="bg-gray-800 p-5 text-white text-center">
-            <h1 className="m-0 text-2xl">Welcome to James Thew's Web Application</h1>
-            <nav className="mt-2">
-                <a href="/" className="mx-2 text-white no-underline text-base hover:underline">Home</a>
-                <a href="/about" className="mx-2 text-white no-underline text-base hover:underline">About</a>
-                <a href="/contact" className="mx-2 text-white no-underline text-base hover:underline">Contact</a>
-                <a href="/services" className="mx-2 text-white no-underline text-base hover:underline">Services</a>
-                <a href="/portfolio" className="mx-2 text-white no-underline text-base hover:underline">Portfolio</a>
-                <a href="/blog" className="mx-2 text-white no-underline text-base hover:underline">Blog</a>
-                <a href="/login" className="mx-2 text-white no-underline text-base hover:underline">Login</a>
-            </nav>
+        <header className="bg-white border-b border-gray-200 shadow-sm">
+            <div className="max-w-7xl mx-auto px-4">
+                <div className="flex items-center justify-between h-16">
+                    <Link
+                        to="/"
+                        className="text-black text-2xl font-bold hover:opacity-80 transition-opacity"
+                    >
+                        🍳 James Thew Chef
+                    </Link>
+
+                    <div className="flex items-center space-x-6">
+                        <nav className="flex space-x-6">
+                            <Link
+                                to="/"
+                                className={`text-black hover:opacity-70 transition-opacity px-3 py-2 rounded-md font-medium ${location.pathname === '/' ? 'bg-gray-100' : ''
+                                    }`}
+                            >
+                                Home
+                            </Link>
+                            <Link
+                                to="/docs"
+                                className={`text-black hover:opacity-70 transition-opacity px-3 py-2 rounded-md font-medium ${location.pathname === '/docs' ? 'bg-gray-100' : ''
+                                    }`}
+                            >
+                                Docs
+                            </Link>
+                        </nav>
+                    </div>
+                </div>
+            </div>
         </header>
     );
 };

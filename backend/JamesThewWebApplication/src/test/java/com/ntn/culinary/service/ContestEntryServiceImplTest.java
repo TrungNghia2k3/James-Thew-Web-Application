@@ -6,6 +6,7 @@ import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.model.ContestEntry;
 import com.ntn.culinary.model.ContestEntryInstruction;
 import com.ntn.culinary.request.ContestEntryRequest;
+import com.ntn.culinary.service.impl.ContestEntryServiceImpl;
 import com.ntn.culinary.utils.ImageUtils;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -25,7 +26,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
-class ContestEntryServiceTest {
+class ContestEntryServiceImplTest {
 
     @Mock private UserDao userDao;
     @Mock private ContestDao contestDao;
@@ -36,7 +37,7 @@ class ContestEntryServiceTest {
     @Mock private Part imagePart;
 
     @InjectMocks
-    private ContestEntryService contestEntryService;
+    private ContestEntryServiceImpl contestEntryService;
 
     @Test // User không tồn tại
     void addContestEntry_WhenUserDoesNotExist_ShouldThrowNotFound() {

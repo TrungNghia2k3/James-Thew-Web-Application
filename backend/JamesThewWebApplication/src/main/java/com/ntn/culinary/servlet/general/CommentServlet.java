@@ -13,6 +13,7 @@ import com.ntn.culinary.request.CommentRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.CommentResponse;
 import com.ntn.culinary.service.CommentService;
+import com.ntn.culinary.service.impl.CommentServiceImpl;
 import com.ntn.culinary.validator.CommentRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
@@ -23,6 +24,7 @@ import java.io.IOException;
 import java.util.List;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -35,19 +37,37 @@ public class CommentServlet extends HttpServlet {
         UserDao userDao = new UserDaoImpl();
         RecipeDao recipeDao = new RecipeDaoImpl();
         CommentDao commentDao = new CommentDaoImpl();
-        this.commentService = new CommentService(userDao, recipeDao, commentDao);
+        this.commentService = new CommentServiceImpl(userDao, recipeDao, commentDao);
     }
 
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) {
         try {
-            int userId = Integer.parseInt(req.getParameter("userId"));
-            List<CommentResponse> comments = commentService.getAllCommentsByUserId(userId);
-            sendResponse(resp, new ApiResponse<>(200, "Comments retrieved successfully", comments));
+            String commentId = req.getParameter("id");
+            String userIdParam = req.getParameter("userId");
+            String recipeIdParam = req.getParameter("recipeId");
+
+            if (commentId != null) {
+                int id = Integer.parseInt(commentId);
+                CommentResponse comment = commentService.getCommentById(id);
+                sendResponse(resp, success(200, "Comment retrieved successfully", comment));
+            } else if (userIdParam != null) {
+                int userId = Integer.parseInt(userIdParam);
+                List<CommentResponse> comments = commentService.getCommentsByUserId(userId);
+                sendResponse(resp, success(200, "Comments retrieved successfully", comments));
+            } else if (recipeIdParam != null) {
+                int recipeId = Integer.parseInt(recipeIdParam);
+                List<CommentResponse> comments = commentService.getCommentsByRecipeId(recipeId);
+                sendResponse(resp, success(200, "Comments retrieved successfully", comments));
+            } else {
+                sendResponse(resp, error(400, "Either userId or recipeId must be provided"));
+            }
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid user ID format"));
+            sendResponse(resp, error(400, "Invalid user ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
+        } catch (Exception e) {
+            sendResponse(resp, error(500, "Internal server error: " + e.getMessage()));
         }
     }
 
@@ -69,17 +89,17 @@ public class CommentServlet extends HttpServlet {
 
             // Add comment
             commentService.addComment(commentRequest);
-            sendResponse(resp, new ApiResponse<>(201, "Comment added successfully"));
+            sendResponse(resp, error(201, "Comment added successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Internal server error" + e.getMessage()));
+            sendResponse(resp, error(500, "Internal server error" + e.getMessage()));
         }
     }
 
@@ -101,17 +121,17 @@ public class CommentServlet extends HttpServlet {
 
             // Update comment
             commentService.updateComment(commentRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Comment updated successfully"));
+            sendResponse(resp, success(200, "Comment updated successfully"));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Internal server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Internal server error: " + e.getMessage()));
         }
     }
 
@@ -120,13 +140,13 @@ public class CommentServlet extends HttpServlet {
         try {
             int commentId = Integer.parseInt(req.getParameter("id"));
             commentService.deleteComment(commentId);
-            sendResponse(resp, new ApiResponse<>(200, "Comment deleted successfully"));
+            sendResponse(resp, success(200, "Comment deleted successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid comment ID format"));
+            sendResponse(resp, error(400, "Invalid comment ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Internal server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Internal server error: " + e.getMessage()));
         }
     }
 }

@@ -10,7 +10,8 @@ import com.ntn.culinary.exception.ValidationException;
 import com.ntn.culinary.request.LoginRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.AuthService;
-import com.ntn.culinary.service.JwtService;
+import com.ntn.culinary.service.impl.AuthServiceImpl;
+import com.ntn.culinary.service.impl.JwtServiceImpl;
 import com.ntn.culinary.validator.LoginRequestValidator;
 
 import javax.servlet.annotation.WebServlet;
@@ -20,6 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Map;
 
+import static com.ntn.culinary.response.ApiResponse.*;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -30,8 +32,8 @@ public class LoginServlet extends HttpServlet {
 
     public LoginServlet() {
         UserDao userDao = new UserDaoImpl();
-        JwtService jwtService = new JwtService();
-        this.authService = new AuthService(userDao, jwtService);
+        JwtServiceImpl jwtServiceImpl = new JwtServiceImpl();
+        this.authService = new AuthServiceImpl(userDao, jwtServiceImpl);
     }
 
     @Override
@@ -53,21 +55,21 @@ public class LoginServlet extends HttpServlet {
 
             // Authenticate
             String jwt = authService.authenticate(loginRequest.getUsername(), loginRequest.getPassword());
-            if (jwt != null) sendResponse(resp, new ApiResponse<>(200, "Login successful", jwt));
+            if (jwt != null) sendResponse(resp, success(200, "Login successful", jwt));
         } catch (JsonSyntaxException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid JSON data"));
+            sendResponse(resp, error(400, "Invalid JSON data"));
         } catch (IOException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid request payload"));
+            sendResponse(resp, error(400, "Invalid request payload"));
         } catch (BadRequestException e) {
-            sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            sendResponse(resp, error(400, e.getMessage()));
         } catch (ForbiddenException e) {
-            sendResponse(resp, new ApiResponse<>(403, e.getMessage()));
+            sendResponse(resp, error(403, e.getMessage()));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ValidationException e) {
-            sendResponse(resp, new ApiResponse<>(422, e.getMessage(), e.getErrors()));
+            sendResponse(resp, validationError(422, e.getMessage(), e.getErrors()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

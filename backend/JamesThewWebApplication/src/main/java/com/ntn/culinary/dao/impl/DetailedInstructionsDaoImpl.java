@@ -8,7 +8,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
@@ -118,4 +120,43 @@ public class DetailedInstructionsDaoImpl implements DetailedInstructionsDao {
             throw new RuntimeException("Error checking existence of detailed instructions by ID", e);
         }
     }
+
+    @Override
+    public Map<Integer, List<DetailedInstructions>> getDetailedInstructionsByRecipeIds(List<Integer> recipeIds) {
+        Map<Integer, List<DetailedInstructions>> result = new HashMap<>();
+        if (recipeIds == null || recipeIds.isEmpty()) return result;
+
+        StringBuilder query = new StringBuilder("SELECT * FROM detailed_instructions WHERE recipe_id IN (");
+        for (int i = 0; i < recipeIds.size(); i++) {
+            query.append("?");
+            if (i < recipeIds.size() - 1) query.append(", ");
+        }
+        query.append(") ORDER BY id ASC"); // optional if you want to sort by id
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(query.toString())) {
+
+            for (int i = 0; i < recipeIds.size(); i++) {
+                stmt.setInt(i + 1, recipeIds.get(i));
+            }
+
+            ResultSet rs = stmt.executeQuery();
+            while (rs.next()) {
+                DetailedInstructions instruction = new DetailedInstructions();
+                instruction.setId(rs.getInt("id"));
+                instruction.setName(rs.getString("name"));
+                instruction.setText(rs.getString("text"));
+                instruction.setImage(rs.getString("image"));
+                instruction.setRecipeId(rs.getInt("recipe_id"));
+
+                result.computeIfAbsent(instruction.getRecipeId(), k -> new ArrayList<>()).add(instruction);
+            }
+
+        } catch (SQLException e) {
+            throw new RuntimeException("Error fetching instructions by recipeIds", e);
+        }
+
+        return result;
+    }
+
 }

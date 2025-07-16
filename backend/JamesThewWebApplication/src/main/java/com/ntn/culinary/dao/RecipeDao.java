@@ -25,13 +25,13 @@ public interface RecipeDao {
 
     int countAllRecipesByUserId(int userId);
 
-    int countAllFreeRecipesByCategoryId(int categoryId);
+    int countAllFreeRecipesByCategory(String category);
 
-    int countAllRecipesByCategoryId(int categoryId);
+    int countAllRecipesByCategory(String category);
 
-    int countAllFreeRecipesByAreaId(int areaId);
+    int countAllFreeRecipesByArea(String area);
 
-    int countAllRecipesByAreaId(int areaId);
+    int countAllRecipesByArea(String area);
 
     List<Recipe> getAllRecipesByUserId(int userId, int page, int size);
 
@@ -45,13 +45,13 @@ public interface RecipeDao {
 
     int countAllFreeRecipes();
 
-    List<Recipe> getAllFreeRecipesByCategoryId(int categoryId, int page, int size);
+    List<Recipe> getAllFreeRecipesByCategory(String category, int page, int size);
 
-    List<Recipe> getAllRecipesByCategoryId(int categoryId, int page, int size);
+    List<Recipe> getAllRecipesByCategory(String category, int page, int size);
 
-    List<Recipe> getAllFreeRecipesByAreaId(int areaId, int page, int size);
+    List<Recipe> getAllFreeRecipesByArea(String area, int page, int size);
 
-    List<Recipe> getAllRecipesByAreaId(int areaId, int page, int size);
+    List<Recipe> getAllRecipesByArea(String area, int page, int size);
 
 
 }

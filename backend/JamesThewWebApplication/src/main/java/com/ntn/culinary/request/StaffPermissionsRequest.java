@@ -2,14 +2,14 @@ package com.ntn.culinary.request;
 
 public class StaffPermissionsRequest {
     private int userId;
-    private int roleId;
+    private int permissionId;
 
     public StaffPermissionsRequest() {
     }
 
-    public StaffPermissionsRequest(int userId, int roleId) {
+    public StaffPermissionsRequest(int userId, int permissionId) {
         this.userId = userId;
-        this.roleId = roleId;
+        this.permissionId = permissionId;
     }
 
     public int getUserId() {
@@ -20,11 +20,11 @@ public class StaffPermissionsRequest {
         this.userId = userId;
     }
 
-    public int getRoleId() {
-        return roleId;
+    public int getPermissionId() {
+        return permissionId;
     }
 
-    public void setRoleId(int roleId) {
-        this.roleId = roleId;
+    public void setPermissionId(int permissionId) {
+        this.permissionId = permissionId;
     }
 }

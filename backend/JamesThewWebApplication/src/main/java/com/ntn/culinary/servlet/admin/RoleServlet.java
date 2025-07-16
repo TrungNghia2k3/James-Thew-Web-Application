@@ -5,12 +5,12 @@ import com.ntn.culinary.dao.UserRolesDao;
 import com.ntn.culinary.dao.impl.RoleDaoImpl;
 import com.ntn.culinary.dao.impl.UserRolesDaoImpl;
 import com.ntn.culinary.exception.ConflictException;
-import com.ntn.culinary.exception.ForbiddenException;
 import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.request.RoleRequest;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.RoleResponse;
 import com.ntn.culinary.service.RoleService;
+import com.ntn.culinary.service.impl.RoleServiceImpl;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -19,6 +19,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
+import static com.ntn.culinary.response.ApiResponse.error;
+import static com.ntn.culinary.response.ApiResponse.success;
 import static com.ntn.culinary.utils.GsonUtils.fromJson;
 import static com.ntn.culinary.utils.HttpRequestUtils.readRequestBody;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
@@ -31,7 +33,7 @@ public class RoleServlet extends HttpServlet {
         // Inject RoleService
         RoleDao roleDao = new RoleDaoImpl(); // Assuming RoleDao is implemented
         UserRolesDao userRolesDao = new UserRolesDaoImpl(); // Assuming UserRolesDao is implemented
-        this.roleService = new RoleService(roleDao, userRolesDao);
+        this.roleService = new RoleServiceImpl(roleDao, userRolesDao);
     }
 
     @Override
@@ -45,23 +47,22 @@ public class RoleServlet extends HttpServlet {
                 int id = Integer.parseInt(idParam);
                 // Lấy thông tin role theo ID
                 RoleResponse role = roleService.getRoleById(id);
-                sendResponse(resp, new ApiResponse<>(200, "Role fetched successfully", role));
+                sendResponse(resp, success(200, "Role fetched successfully", role));
             } else if (nameParam != null) {
                 // Lấy thông tin role theo tên
                 RoleResponse role = roleService.getRoleByName(nameParam);
-                sendResponse(resp, new ApiResponse<>(200, "Roles fetched successfully", role));
+                sendResponse(resp, success(200, "Roles fetched successfully", role));
             } else {
                 // Trả về danh sách tất cả các role
                 List<RoleResponse> roles = roleService.getAllRoles();
-                sendResponse(resp, new ApiResponse<>(200, "All roles fetched successfully", roles));
+                sendResponse(resp, success(200, "All roles fetched successfully", roles));
             }
-
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -81,11 +82,11 @@ public class RoleServlet extends HttpServlet {
             }
 
             roleService.addRole(name);
-            sendResponse(resp, new ApiResponse<>(201, "Role added successfully"));
+            sendResponse(resp, success(201, "Role added successfully"));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -104,13 +105,13 @@ public class RoleServlet extends HttpServlet {
             }
 
             roleService.updateRole(roleRequest);
-            sendResponse(resp, new ApiResponse<>(200, "Role updated successfully"));
+            sendResponse(resp, success(200, "Role updated successfully"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 
@@ -125,15 +126,15 @@ public class RoleServlet extends HttpServlet {
 
             int id = Integer.parseInt(idParam);
             roleService.deleteRole(id);
-            sendResponse(resp, new ApiResponse<>(200, "Role deleted successfully"));
+            sendResponse(resp, success(200, "Role deleted successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (ConflictException e) {
-            sendResponse(resp, new ApiResponse<>(409, e.getMessage()));
+            sendResponse(resp, error(409, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

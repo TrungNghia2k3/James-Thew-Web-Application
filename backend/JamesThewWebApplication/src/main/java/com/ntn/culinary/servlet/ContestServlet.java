@@ -8,6 +8,7 @@ import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.response.ContestResponse;
 import com.ntn.culinary.service.ContestService;
+import com.ntn.culinary.service.impl.ContestServiceImpl;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
@@ -16,6 +17,8 @@ import javax.servlet.http.HttpServletResponse;
 
 import java.util.List;
 
+import static com.ntn.culinary.response.ApiResponse.error;
+import static com.ntn.culinary.response.ApiResponse.success;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 
@@ -26,7 +29,7 @@ public class ContestServlet extends HttpServlet {
     public ContestServlet() {
         ContestDao contestDao = new ContestDaoImpl();
         ContestImagesDao contestImagesDao = new ContestImagesDaoImpl();
-        this.contestService = new ContestService(contestDao, contestImagesDao);
+        this.contestService = new ContestServiceImpl(contestDao, contestImagesDao);
     }
 
     @Override
@@ -38,17 +41,17 @@ public class ContestServlet extends HttpServlet {
             if (idParam != null) {
                 int id = Integer.parseInt(idParam);
                 ContestResponse contest = contestService.getContestById(id);
-                sendResponse(resp, new ApiResponse<>(200, "Contest fetched successfully", contest));
+                sendResponse(resp, success(200, "Contest fetched successfully", contest));
             } else {
                 List<ContestResponse> contests = contestService.getAllContests();
-                sendResponse(resp, new ApiResponse<>(200, "All contests fetched", contests));
+                sendResponse(resp, success(200, "All contests fetched", contests));
             }
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid ID format"));
+            sendResponse(resp, error(400, "Invalid ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

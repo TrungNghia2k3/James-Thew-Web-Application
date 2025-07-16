@@ -7,11 +7,15 @@ import java.util.List;
 public interface ContestEntryDao {
     void addContestEntry(ContestEntry contestEntry);
 
-    void updateContestEntry(ContestEntry contestEntry);
+    void updateContestEntry(ContestEntry contestEntry, String imageFileName);
 
     int getContestEntryIdByUserIdAndContestId(int userId, int contestId);
 
+    int getContestEntryIdByUserIdAndContestIdAndName(int userId, int contestId, String name);
+
     boolean existsByUserIdAndContestIdAndName(int userId, int contestId, String name);
+
+    ContestEntry getContestEntryByUserIdAndContestIdAndName(int userId, int contestId, String name);
 
     void updateContestEntryStatus(int contestEntryId, String status);
 

@@ -14,6 +14,8 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 
+import static com.ntn.culinary.response.ApiResponse.error;
+
 @WebServlet("/api/images/*")
 public class ImageServlet extends HttpServlet {
 
@@ -59,11 +61,11 @@ public class ImageServlet extends HttpServlet {
             }
 
         } catch (BadRequestException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(400, e.getMessage()));
+            ResponseUtils.sendResponse(resp, error(400, e.getMessage()));
         } catch (NotFoundException e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            ResponseUtils.sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            ResponseUtils.sendResponse(resp, new ApiResponse<>(500, "Server error: " + e.getMessage()));
+            ResponseUtils.sendResponse(resp, error(500, "Server error: " + e.getMessage()));
         }
     }
 }

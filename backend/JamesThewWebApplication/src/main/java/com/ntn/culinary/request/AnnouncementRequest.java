@@ -3,6 +3,7 @@ package com.ntn.culinary.request;
 import com.ntn.culinary.model.AnnounceWinner;
 
 import java.sql.Date;
+import java.util.ArrayList;
 import java.util.List;
 
 public class AnnouncementRequest {
@@ -11,17 +12,19 @@ public class AnnouncementRequest {
     private Date announcementDate;
     private String description;
     private int contestId;
-    private List<AnnounceWinner> winners;
+    private List<AnnounceWinner> winners = new ArrayList<>();
 
     public AnnouncementRequest() {
+        // winners already initialized
     }
 
-    public AnnouncementRequest(String title, Date announcementDate, String description, int contestId, List<AnnounceWinner> winners) {
+    public AnnouncementRequest(int id, String title, Date announcementDate, String description, int contestId, List<AnnounceWinner> winners) {
+        this.id = id;
         this.title = title;
         this.announcementDate = announcementDate;
         this.description = description;
         this.contestId = contestId;
-        this.winners = winners;
+        this.winners = (winners != null) ? winners : new ArrayList<>();
     }
 
     public int getId() {
@@ -69,6 +72,6 @@ public class AnnouncementRequest {
     }
 
     public void setWinners(List<AnnounceWinner> winners) {
-        this.winners = winners;
+        this.winners = (winners != null) ? winners : new ArrayList<>();
     }
 }

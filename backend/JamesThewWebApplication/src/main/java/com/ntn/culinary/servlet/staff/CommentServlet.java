@@ -9,12 +9,15 @@ import com.ntn.culinary.dao.impl.UserDaoImpl;
 import com.ntn.culinary.exception.NotFoundException;
 import com.ntn.culinary.response.ApiResponse;
 import com.ntn.culinary.service.CommentService;
+import com.ntn.culinary.service.impl.CommentServiceImpl;
 
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import static com.ntn.culinary.response.ApiResponse.error;
+import static com.ntn.culinary.response.ApiResponse.success;
 import static com.ntn.culinary.utils.ResponseUtils.sendResponse;
 
 @WebServlet("/api/protected/staff/comments")
@@ -25,7 +28,7 @@ public class CommentServlet extends HttpServlet {
         UserDao userDao = new UserDaoImpl();
         RecipeDao recipeDao = new RecipeDaoImpl();
         CommentDao commentDao = new CommentDaoImpl();
-        this.commentService = new CommentService(userDao, recipeDao, commentDao);
+        this.commentService = new CommentServiceImpl(userDao, recipeDao, commentDao);
     }
 
     @Override
@@ -33,13 +36,13 @@ public class CommentServlet extends HttpServlet {
         try {
             int commentId = Integer.parseInt(req.getParameter("id"));
             commentService.banComment(commentId);
-            sendResponse(resp, new ApiResponse<>(200, "Comment banned successfully"));
+            sendResponse(resp, success(200, "Comment banned successfully"));
         } catch (NumberFormatException e) {
-            sendResponse(resp, new ApiResponse<>(400, "Invalid comment ID format"));
+            sendResponse(resp, error(400, "Invalid comment ID format"));
         } catch (NotFoundException e) {
-            sendResponse(resp, new ApiResponse<>(404, e.getMessage()));
+            sendResponse(resp, error(404, e.getMessage()));
         } catch (Exception e) {
-            sendResponse(resp, new ApiResponse<>(500, "Internal server error: " + e.getMessage()));
+            sendResponse(resp, error(500, "Internal server error: " + e.getMessage()));
         }
     }
 }

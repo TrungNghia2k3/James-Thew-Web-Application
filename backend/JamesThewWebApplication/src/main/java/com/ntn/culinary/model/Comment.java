@@ -14,6 +14,15 @@ public class Comment {
     public Comment() {
     }
 
+    public Comment(int id, int userId, int recipeId, String content, Timestamp date, int rating) {
+        this.id = id;
+        this.userId = userId;
+        this.recipeId = recipeId;
+        this.content = content;
+        this.date = date;
+        this.rating = rating;
+    }
+
     public Comment(int id, int userId, int recipeId, String content, Timestamp date, int rating, boolean isBanned) {
         this.id = id;
         this.userId = userId;

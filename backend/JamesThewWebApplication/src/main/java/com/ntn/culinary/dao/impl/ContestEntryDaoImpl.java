@@ -2,7 +2,6 @@ package com.ntn.culinary.dao.impl;
 
 import com.ntn.culinary.dao.ContestEntryDao;
 import com.ntn.culinary.model.ContestEntry;
-import com.ntn.culinary.utils.DatabaseUtils;
 
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -49,7 +48,7 @@ public class ContestEntryDaoImpl implements ContestEntryDao {
     }
 
     @Override
-    public void updateContestEntry(ContestEntry contestEntry) {
+    public void updateContestEntry(ContestEntry contestEntry, String imageFileName) {
         String UPDATE_CONTEST_ENTRY_QUERY = """
                 UPDATE contest_entry SET name = ?, ingredients = ?, instructions = ?, image = ?, prepare_time = ?, cooking_time = ?, yield = ?, category = ?, area = ?, short_description = ?, date_modified = ? WHERE id = ?
                 """;
@@ -60,7 +59,7 @@ public class ContestEntryDaoImpl implements ContestEntryDao {
             stmt.setString(1, contestEntry.getName());
             stmt.setString(2, contestEntry.getIngredients());
             stmt.setString(3, contestEntry.getInstructions());
-            stmt.setString(4, contestEntry.getImage());
+            stmt.setString(4, imageFileName);
             stmt.setString(5, contestEntry.getPrepareTime());
             stmt.setString(6, contestEntry.getCookingTime());
             stmt.setString(7, contestEntry.getYield());
@@ -102,6 +101,31 @@ public class ContestEntryDaoImpl implements ContestEntryDao {
     }
 
     @Override
+    public int getContestEntryIdByUserIdAndContestIdAndName(int userId, int contestId, String name) {
+        String SELECT_CONTEST_ENTRY_ID_BY_USER_ID_AND_CONTEST_ID_AND_NAME_QUERY = """
+                SELECT id FROM contest_entry WHERE user_id = ? AND contest_id = ? AND name = ?
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_CONTEST_ENTRY_ID_BY_USER_ID_AND_CONTEST_ID_AND_NAME_QUERY)) {
+
+            stmt.setInt(1, userId);
+            stmt.setInt(2, contestId);
+            stmt.setString(3, name);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return rs.getInt("id");
+                } else {
+                    return -1; // Not found
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error retrieving contest entry ID by user ID, contest ID, and name", e);
+        }
+    }
+
+    @Override
     public boolean existsByUserIdAndContestIdAndName(int userId, int contestId, String name) {
 
         String EXIST_BY_USER_ID_AND_CONTEST_ID_AND_NAME = """
@@ -123,6 +147,31 @@ public class ContestEntryDaoImpl implements ContestEntryDao {
             }
         } catch (SQLException e) {
             throw new RuntimeException("Error checking contest entry existence", e);
+        }
+    }
+
+    @Override
+    public ContestEntry getContestEntryByUserIdAndContestIdAndName(int userId, int contestId, String name) {
+        String SELECT_CONTEST_ENTRY_BY_USER_ID_AND_CONTEST_ID_AND_NAME_QUERY = """
+                SELECT * FROM contest_entry WHERE user_id = ? AND contest_id = ? AND name = ? LIMIT 1
+                """;
+
+        try (Connection conn = getConnection();
+             PreparedStatement stmt = conn.prepareStatement(SELECT_CONTEST_ENTRY_BY_USER_ID_AND_CONTEST_ID_AND_NAME_QUERY)) {
+
+            stmt.setInt(1, userId);
+            stmt.setInt(2, contestId);
+            stmt.setString(3, name);
+
+            try (ResultSet rs = stmt.executeQuery()) {
+                if (rs.next()) {
+                    return mapResultSetToContestEntry(rs);
+                } else {
+                    return null; // Not found
+                }
+            }
+        } catch (SQLException e) {
+            throw new RuntimeException("Error retrieving contest entry by user ID, contest ID, and name", e);
         }
     }
 

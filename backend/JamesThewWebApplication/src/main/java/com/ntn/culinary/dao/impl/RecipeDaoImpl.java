@@ -10,6 +10,7 @@ import java.util.List;
 import static com.ntn.culinary.utils.DatabaseUtils.getConnection;
 
 public class RecipeDaoImpl implements RecipeDao {
+
     @Override
     public void addRecipe(Recipe recipe) {
         String INSERT_RECIPE_QUERY = """
@@ -308,15 +309,15 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public int countAllFreeRecipesByCategoryId(int categoryId) {
+    public int countAllFreeRecipesByCategory(String category) {
         String COUNT_ALL_FREE_RECIPES_BY_CATEGORY_ID_QUERY = """
-                SELECT COUNT(*) FROM recipes WHERE category_id = ? AND access_type = 'FREE'
+                SELECT COUNT(*) FROM recipes WHERE category = ? AND access_type = 'FREE'
                 """;
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(COUNT_ALL_FREE_RECIPES_BY_CATEGORY_ID_QUERY)) {
 
-            stmt.setInt(1, categoryId);
+            stmt.setString(1, category);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -330,15 +331,15 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public int countAllRecipesByCategoryId(int categoryId) {
+    public int countAllRecipesByCategory(String category) {
         String COUNT_ALL_RECIPES_BY_CATEGORY_ID_QUERY = """
-                SELECT COUNT(*) FROM recipes WHERE category_id = ?
+                SELECT COUNT(*) FROM recipes WHERE category = ?
                 """;
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(COUNT_ALL_RECIPES_BY_CATEGORY_ID_QUERY)) {
 
-            stmt.setInt(1, categoryId);
+            stmt.setString(1, category);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -352,15 +353,15 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public int countAllFreeRecipesByAreaId(int areaId) {
+    public int countAllFreeRecipesByArea(String area) {
         String COUNT_ALL_FREE_RECIPES_BY_AREA_ID_QUERY = """
-                SELECT COUNT(*) FROM recipes WHERE area_id = ? AND access_type = 'FREE'
+                SELECT COUNT(*) FROM recipes WHERE area = ? AND access_type = 'FREE'
                 """;
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(COUNT_ALL_FREE_RECIPES_BY_AREA_ID_QUERY)) {
 
-            stmt.setInt(1, areaId);
+            stmt.setString(1, area);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -374,15 +375,15 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public int countAllRecipesByAreaId(int areaId) {
+    public int countAllRecipesByArea(String area) {
         String COUNT_ALL_RECIPES_BY_AREA_ID_QUERY = """
-                SELECT COUNT(*) FROM recipes WHERE area_id = ?
+                SELECT COUNT(*) FROM recipes WHERE area = ?
                 """;
 
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(COUNT_ALL_RECIPES_BY_AREA_ID_QUERY)) {
 
-            stmt.setInt(1, areaId);
+            stmt.setString(1, area);
 
             try (ResultSet rs = stmt.executeQuery()) {
                 if (rs.next()) {
@@ -622,9 +623,9 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public List<Recipe> getAllFreeRecipesByCategoryId(int categoryId, int page, int size) {
+    public List<Recipe> getAllFreeRecipesByCategory(String category, int page, int size) {
         String SELECT_ALL_RECIPES_BY_CATEGORY_ID_WITH_LIMIT_AND_OFFSET_QUERY = """
-                SELECT * FROM recipes WHERE category_id = ? AND access_type = 'FREE' LIMIT ? OFFSET ?
+                SELECT * FROM recipes WHERE category = ? AND access_type = 'FREE' LIMIT ? OFFSET ?
                 """;
 
         List<Recipe> recipes = new ArrayList<>();
@@ -633,7 +634,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_RECIPES_BY_CATEGORY_ID_WITH_LIMIT_AND_OFFSET_QUERY)) {
 
-            stmt.setInt(1, categoryId);
+            stmt.setString(1, category);
             stmt.setInt(2, size);
             stmt.setInt(3, offset);
 
@@ -649,9 +650,9 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public List<Recipe> getAllRecipesByCategoryId(int categoryId, int page, int size) {
+    public List<Recipe> getAllRecipesByCategory(String category, int page, int size) {
         String SELECT_ALL_RECIPES_BY_CATEGORY_ID_WITH_LIMIT_AND_OFFSET_QUERY = """
-                SELECT * FROM recipes WHERE category_id = ? LIMIT ? OFFSET ?
+                SELECT * FROM recipes WHERE category = ? LIMIT ? OFFSET ?
                 """;
 
         List<Recipe> recipes = new ArrayList<>();
@@ -660,7 +661,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_RECIPES_BY_CATEGORY_ID_WITH_LIMIT_AND_OFFSET_QUERY)) {
 
-            stmt.setInt(1, categoryId);
+            stmt.setString(1, category);
             stmt.setInt(2, size);
             stmt.setInt(3, offset);
 
@@ -676,9 +677,9 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public List<Recipe> getAllFreeRecipesByAreaId(int areaId, int page, int size) {
+    public List<Recipe> getAllFreeRecipesByArea(String area, int page, int size) {
         String SELECT_ALL_RECIPES_BY_AREA_ID_WITH_LIMIT_AND_OFFSET_QUERY = """
-                SELECT * FROM recipes WHERE area_id = ? AND access_type = 'FREE' LIMIT ? OFFSET ?
+                SELECT * FROM recipes WHERE area = ? AND access_type = 'FREE' LIMIT ? OFFSET ?
                 """;
 
         List<Recipe> recipes = new ArrayList<>();
@@ -687,7 +688,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_RECIPES_BY_AREA_ID_WITH_LIMIT_AND_OFFSET_QUERY)) {
 
-            stmt.setInt(1, areaId);
+            stmt.setString(1, area);
             stmt.setInt(2, size);
             stmt.setInt(3, offset);
 
@@ -703,9 +704,9 @@ public class RecipeDaoImpl implements RecipeDao {
     }
 
     @Override
-    public List<Recipe> getAllRecipesByAreaId(int areaId, int page, int size) {
+    public List<Recipe> getAllRecipesByArea(String area, int page, int size) {
         String SELECT_ALL_RECIPES_BY_AREA_ID_WITH_LIMIT_AND_OFFSET_QUERY = """
-                SELECT * FROM recipes WHERE area_id = ? LIMIT ? OFFSET ?
+                SELECT * FROM recipes WHERE area = ? LIMIT ? OFFSET ?
                 """;
 
         List<Recipe> recipes = new ArrayList<>();
@@ -714,7 +715,7 @@ public class RecipeDaoImpl implements RecipeDao {
         try (Connection conn = getConnection();
              PreparedStatement stmt = conn.prepareStatement(SELECT_ALL_RECIPES_BY_AREA_ID_WITH_LIMIT_AND_OFFSET_QUERY)) {
 
-            stmt.setInt(1, areaId);
+            stmt.setString(1, area);
             stmt.setInt(2, size);
             stmt.setInt(3, offset);
 
