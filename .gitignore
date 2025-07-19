@@ -1,13 +1,13 @@
 # Backend
 backend/images/
-backend/JamesThewWebApplication/.idea
-backend/JamesThewWebApplication/out
-backend/JamesThewWebApplication/target
-backend/JamesThewWebApplication/src/main/resources/.env
+backend/JamesThewWebAPI/.idea
+backend/JamesThewWebAPI/out
+backend/JamesThewWebAPI/target
+backend/JamesThewWebAPI/src/main/resources/.env
 # Frontend
-frontend/WebApplication/.idea
-frontend/WebApplication/node_modules
-frontend/WebApplication/dist
+frontend/JamesThewWebApplication/.idea
+frontend/JamesThewWebApplication/node_modules
+frontend/JamesThewWebApplication/dist
 
 # General
 *.iml
