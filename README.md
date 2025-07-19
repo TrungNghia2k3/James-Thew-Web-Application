@@ -1,4 +1,4 @@
-# JamesThew Web Application
+# JamesThew Project
 
 This is a simple Java web application built using Servlet technology, deployed on Apache Tomcat.
 
